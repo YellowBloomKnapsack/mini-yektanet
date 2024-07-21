@@ -12,11 +12,11 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(".env", "../common/.env", "../eventserver/.env"); err != nil {
+	if err := godotenv.Load(".env", "../common/.env", "../eventserver/.env", "../panel/.env"); err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-    logic.Init()
+	logic.Init()
 	go logic.StartTicker()
 
 	r := gin.Default()

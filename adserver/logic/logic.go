@@ -1,93 +1,91 @@
 package logic
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
-    "crypto/aes"
-    "crypto/cipher"
-    "crypto/rand"
-    "encoding/base64"
-    "encoding/json"
-    "time"
-    "io"
+	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
 
 var (
-    tmpPrivateKey string
-    privateKey []byte
+	tmpPrivateKey string
+	privateKey    []byte
 )
 
 func Init() {
-    tmpPrivateKey = os.Getenv("PRIVATE_KEY")
-    privateKey, _ = base64.StdEncoding.DecodeString(tmpPrivateKey)
+	tmpPrivateKey = os.Getenv("PRIVATE_KEY")
+	privateKey, _ = base64.StdEncoding.DecodeString(tmpPrivateKey)
 }
 
 type InteractionType uint8
 
 const (
-	getAdsAPIPath = "localhsot:8082/ads" // TODO: make this an env var in panel
-
 	ImpressionType InteractionType = 0
-	ClickType InteractionType= 1
+	ClickType      InteractionType = 1
 )
 
 type CustomToken struct {
-    Interaction        InteractionType `json:"interaction"`
-    AdID               uint            `json:"ad_id"`
-    PublisherUsername  string          `json:"publisher_username"`
-    RedirectPath       string          `json:"redirect_path"`
-    CreatedAt          int64           `json:"created_at"`
+	Interaction       InteractionType `json:"interaction"`
+	AdID              uint            `json:"ad_id"`
+	PublisherUsername string          `json:"publisher_username"`
+	RedirectPath      string          `json:"redirect_path"`
+	CreatedAt         int64           `json:"created_at"`
 }
 
 func encrypt(data []byte, key []byte) (string, error) {
-    block, err := aes.NewCipher(key)
-    if err != nil {
-        return "", err
-    }
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
 
-    gcm, err := cipher.NewGCM(block)
-    if err != nil {
-        return "", err
-    }
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
 
-    nonce := make([]byte, gcm.NonceSize())
-    if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-        return "", err
-    }
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
 
-    ciphertext := gcm.Seal(nonce, nonce, data, nil)
-    return base64.StdEncoding.EncodeToString(ciphertext), nil
+	ciphertext := gcm.Seal(nonce, nonce, data, nil)
+	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
 func generateToken(interaction InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error) {
-    token := CustomToken{
-        Interaction:        interaction,
-        AdID:               adID,
-        PublisherUsername:  publisherUsername,
-        RedirectPath:       redirectPath,
-        CreatedAt:          time.Now().Unix(),
-    }
+	token := CustomToken{
+		Interaction:       interaction,
+		AdID:              adID,
+		PublisherUsername: publisherUsername,
+		RedirectPath:      redirectPath,
+		CreatedAt:         time.Now().Unix(),
+	}
 
-    tokenBytes, err := json.Marshal(token)
-    if err != nil {
-        return "", err
-    }
+	tokenBytes, err := json.Marshal(token)
+	if err != nil {
+		return "", err
+	}
 
-    encryptedToken, err := encrypt(tokenBytes, key)
-    if err != nil {
-        return "", err
-    }
+	encryptedToken, err := encrypt(tokenBytes, key)
+	if err != nil {
+		return "", err
+	}
 
-    return encryptedToken, nil
+	return encryptedToken, nil
 }
 
 func GenerateToken(interaction InteractionType, adID uint, publisherUsername, redirectPath string) (string, error) {
-    return generateToken(interaction, adID, publisherUsername, redirectPath, privateKey)
+	return generateToken(interaction, adID, publisherUsername, redirectPath, privateKey)
 }
 
 var adsList = make([]*dto.AdDTO, 0)
@@ -117,6 +115,9 @@ func updateAdsList() error {
 	adsList = append(adsList, &dto.AdDTO{ID: 1, Text: "salam", ImagePath: "somewhere", Bid: 30, Website: "google.com"})
 	adsList = append(adsList, &dto.AdDTO{ID: 2, Text: "khodafez", ImagePath: "somewhere but not here", Bid: 40, Website: "duckduckgo.com"})
 	fmt.Println("Yayyyyyyyyyy!")
+
+	getAdsAPIPath := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API")
+
 	resp, err := http.Get(getAdsAPIPath)
 	if err != nil {
 		return fmt.Errorf("failed to fetch ads: %v", err)
@@ -155,7 +156,8 @@ func StartTicker() {
 	for {
 		select {
 		case <-ticker.C:
-			_ = updateAdsList()
+			err := updateAdsList()
+			fmt.Println(err)
 		}
 	}
 }
