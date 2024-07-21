@@ -1,4 +1,4 @@
-package publisherwebsitehandlers
+package handlers
 
 // "math/rand"
 // "net/http"

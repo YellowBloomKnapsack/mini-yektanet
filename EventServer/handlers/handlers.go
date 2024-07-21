@@ -1,4 +1,4 @@
-package eventserverhandlers
+package handlers
 
 // "math/rand"
 // "net/http"

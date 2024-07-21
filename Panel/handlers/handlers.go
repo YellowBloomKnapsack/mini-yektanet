@@ -1,4 +1,4 @@
-package panelhandlers
+package handlers
 
 // "math/rand"
 // "net/http"
