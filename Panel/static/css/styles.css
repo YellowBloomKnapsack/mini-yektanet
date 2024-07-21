@@ -1,0 +1,57 @@
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+    overflow: hidden;
+    padding: 20px;
+}
+
+h1, h2 {
+    color: #333;
+}
+
+.balance, .create-ad, .ad-list {
+    background: #f4f4f4;
+    margin-bottom: 20px;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+input, button {
+    margin-bottom: 10px;
+    padding: 10px;
+}
+
+button {
+    background: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #555;
+}
+
+.ad-item {
+    background: #fff;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.ad-item img {
+    max-width: 200px;
+    height: auto;
+}

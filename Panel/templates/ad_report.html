@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Ad Report</title>
+</head>
+
+<body>
+    <h1>Ad Report</h1>
+    <p>Ad: {{ .Ad.Text }}</p>
+    <p>Image: <img src="{{ .Ad.ImagePath }}" alt="{{ .Ad.Text }}"></p>
+    <p>Impressions: {{ .Impressions }}</p>
+    <p>Clicks: {{ .Clicks }}</p>
+    <p>CTR: {{ printf "%.2f%%" .CTR }}</p>
+    <p>Total Cost: {{ .TotalCost }}</p>
+    <a href="/advertiser/{{ .Ad.Advertiser.Username }}/panel">Back to Panel</a>
+</body>
+
+</html>

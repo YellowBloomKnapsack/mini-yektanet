@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advertiser Panel</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Advertiser Panel</h1>
+        <div class="balance">
+            <h2>Account Balance: ${{ .Balance }}</h2>
+            <form action="/advertiser/{{ .Username }}/add-funds" method="POST">
+                <input type="number" name="amount" placeholder="Amount">
+                <button type="submit">Add Funds</button>
+            </form>
+        </div>
+        <div class="create-ad">
+            <h2>Create New Ad</h2>
+            <form action="/advertiser/{{ .Username }}/create-ad" method="POST" enctype="multipart/form-data">
+                <input type="text" name="title" placeholder="Ad Title" required>
+                <input type="file" name="image" accept="image/*" required>
+                <input type="number" name="bid" placeholder="Bid per Click" required>
+                <button type="submit">Create Ad</button>
+            </form>
+        </div>
+        <div class="ad-list">
+            <h2>Your Ads</h2>
+            {{ range .Ads }}
+            <div class="ad-item">
+                <h3>{{ .Text }}</h3>
+                <img src="{{ .ImagePath }}" alt="Ad Image">
+                <p>Bid: ${{ .Bid }}</p>
+                <p>Status: {{ if .Active }}Active{{ else }}Inactive{{ end }}</p>
+                <form action="/advertiser/{{ $.Username }}/toggle-ad" method="POST">
+                    <input type="hidden" name="ad_id" value="{{ .ID }}">
+                    <button type="submit">{{ if .Active }}Deactivate{{ else }}Activate{{ end }}</button>
+                </form>
+                <a href="/advertiser/{{ $.Username }}/ad-report/{{ .ID }}">View Report</a>
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</body>
+
+</html>
