@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
-    "YellowBloomKnapsack/mini-yektanet/AdServer/handlers"
-    "YellowBloomKnapsack/mini-yektanet/AdServer/logic"
+	"YellowBloomKnapsack/mini-yektanet/AdServer/handlers"
+	"YellowBloomKnapsack/mini-yektanet/AdServer/logic"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-    go logic.StartTicker()
+	go logic.StartTicker()
 
 	r := gin.Default()
 

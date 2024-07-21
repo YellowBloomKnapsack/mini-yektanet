@@ -1,62 +1,62 @@
 package logic
 
 import (
-    "time"
 	"encoding/json"
-    "fmt"
-	"net/http"
+	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
+	"time"
 
-    "YellowBloomKnapsack/mini-yektanet/common/models"
+	"YellowBloomKnapsack/mini-yektanet/common/models"
 )
 
 const (
-    getAdsAPIPath = "localhsot:8082/ads" // TODO: make this an env var in panel
+	getAdsAPIPath = "localhsot:8082/ads" // TODO: make this an env var in panel
 )
 
 type AdDTO struct {
-    ID        uint
-    Text      string
-    ImagePath string
-    Bid       int64
+	ID        uint
+	Text      string
+	ImagePath string
+	Bid       int64
 }
 
 func ToAdDTO(dbAd models.Ad) *AdDTO {
-    return &AdDTO{
-        ID:        dbAd.ID,
-        Text:      dbAd.Text,
-        ImagePath: dbAd.ImagePath,
-        Bid:       dbAd.Bid,
-    }
+	return &AdDTO{
+		ID:        dbAd.ID,
+		Text:      dbAd.Text,
+		ImagePath: dbAd.ImagePath,
+		Bid:       dbAd.Bid,
+	}
 }
 
 var adsList = make([]*AdDTO, 0)
 
 func isBetterThan(lhs, rhs *AdDTO) bool {
-    return rhs.Bid > lhs.Bid
+	return rhs.Bid > lhs.Bid
 }
 
 func GetBestAd() (*AdDTO, error) {
-    if len(adsList) == 0 {
-        return nil, fmt.Errorf("no ad was found")
-    }
+	if len(adsList) == 0 {
+		return nil, fmt.Errorf("no ad was found")
+	}
 
-    bestAd := adsList[0]
+	bestAd := adsList[0]
 
-    for _, ad := range adsList {
-        if isBetterThan(bestAd, ad) {
-            bestAd = ad
-        }
-    }
+	for _, ad := range adsList {
+		if isBetterThan(bestAd, ad) {
+			bestAd = ad
+		}
+	}
 
-    return bestAd, nil
+	return bestAd, nil
 }
 
 // WARNING: not tested yet
 func updateAdsList() error {
-    fmt.Println("Yayyyyyyyyyy!")
+	fmt.Println("Yayyyyyyyyyy!")
 	resp, err := http.Get(getAdsAPIPath)
 	if err != nil {
 		return fmt.Errorf("failed to fetch ads: %v", err)
@@ -79,7 +79,7 @@ func updateAdsList() error {
 
 	var newAdsList []*AdDTO
 	for _, ad := range ads {
-	    newAdsList = append(newAdsList, ToAdDTO(ad))
+		newAdsList = append(newAdsList, ToAdDTO(ad))
 	}
 
 	adsList = newAdsList
@@ -88,14 +88,14 @@ func updateAdsList() error {
 }
 
 func StartTicker() {
-    interval, _ := strconv.Atoi(os.Getenv("ADS_FETCH_INTERVAL_SECS"))
-    ticker := time.NewTicker(time.Duration(interval) * time.Second)
-    defer ticker.Stop()
+	interval, _ := strconv.Atoi(os.Getenv("ADS_FETCH_INTERVAL_SECS"))
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	defer ticker.Stop()
 
-    for {
-        select {
-        case <-ticker.C:
-            _ = updateAdsList()
-        }
-    }
+	for {
+		select {
+		case <-ticker.C:
+			_ = updateAdsList()
+		}
+	}
 }
