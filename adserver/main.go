@@ -12,15 +12,16 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(".env", "../common/.env", "../EventServer/.env"); err != nil {
+	if err := godotenv.Load(".env", "../common/.env", "../eventserver/.env"); err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
+    logic.Init()
 	go logic.StartTicker()
 
 	r := gin.Default()
 
-	r.GET("/", handlers.GetAd)
+	r.GET("/:publisherUsername", handlers.GetAd)
 
 	port := os.Getenv("AD_SERVER_PORT")
 	if port == "" {

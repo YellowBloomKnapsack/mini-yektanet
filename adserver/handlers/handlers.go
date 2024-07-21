@@ -4,9 +4,9 @@ import (
 	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
 
 	"net/http"
+	"fmt"
 	"os"
 
-	"github.com/beevik/guid"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,17 +24,18 @@ func GetAd(c *gin.Context) {
 	clickReqPath := os.Getenv("CLICK_REQ_PATH")
 	impressionReqPath := os.Getenv("IMPRESSION_REQ_PATH")
 
-	clickToken := guid.NewString()
-	impressionToken := guid.NewString()
+	publisherUsername := c.Param("publisherUsername")
+
+	clickToken, _ := logic.GenerateToken(logic.ClickType, chosenAd.ID, publisherUsername, chosenAd.Website)
+	impressionToken, _ := logic.GenerateToken(logic.ImpressionType, chosenAd.ID, publisherUsername, chosenAd.Website)
+
+	fmt.Println(clickToken)
+	fmt.Println(impressionToken)
 
 	c.JSON(http.StatusOK, gin.H{
-		"ad_id":            chosenAd.ID,
 		"image_link":       chosenAd.ImagePath,
 		"title":            chosenAd.Text,
-		"impression_link":  eventServerURL + "/" + impressionReqPath,
-		"click_link":       eventServerURL + "/" + clickReqPath,
-		"impression_token": impressionToken,
-		"click_token":      clickToken,
-		"redirect_path":    chosenAd.Website,
+		"impression_link":  eventServerURL + "/" + impressionReqPath + "?token=" + impressionToken,
+		"click_link":       eventServerURL + "/" + clickReqPath + "?token=" + clickToken,
 	})
 }
