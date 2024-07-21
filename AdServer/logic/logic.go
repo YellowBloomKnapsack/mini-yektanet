@@ -30,7 +30,7 @@ func ToAdDTO(dbAd models.Ad) *AdDTO {
 		Text:      dbAd.Text,
 		ImagePath: dbAd.ImagePath,
 		Bid:       dbAd.Bid,
-	    Website:   dbAd.Website,
+		Website:   dbAd.Website,
 	}
 }
 
@@ -58,8 +58,8 @@ func GetBestAd() (*AdDTO, error) {
 
 // WARNING: not tested yet
 func updateAdsList() error {
-    adsList = append(adsList, &AdDTO{ID: 1, Text: "salam", ImagePath: "somewhere", Bid: 30, Website: "google.com"})
-    adsList = append(adsList, &AdDTO{ID: 2, Text: "khodafez", ImagePath: "somewhere but not here", Bid: 40, Website: "duckduckgo.com"})
+	adsList = append(adsList, &AdDTO{ID: 1, Text: "salam", ImagePath: "somewhere", Bid: 30, Website: "google.com"})
+	adsList = append(adsList, &AdDTO{ID: 2, Text: "khodafez", ImagePath: "somewhere but not here", Bid: 40, Website: "duckduckgo.com"})
 	fmt.Println("Yayyyyyyyyyy!")
 	resp, err := http.Get(getAdsAPIPath)
 	if err != nil {
