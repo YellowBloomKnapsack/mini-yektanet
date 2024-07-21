@@ -35,5 +35,6 @@ func GetAd(c *gin.Context) {
 		"click_link":       eventServerURL + "/" + clickReqPath,
 		"impression_token": impressionToken,
 		"click_token":      clickToken,
+		"redirect_path":    chosenAd.Website,
 	})
 }
