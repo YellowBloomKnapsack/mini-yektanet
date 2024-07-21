@@ -13,6 +13,8 @@ import (
     "encoding/json"
     "time"
     "io"
+
+	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
 
 var (
@@ -40,14 +42,6 @@ type CustomToken struct {
     PublisherUsername  string          `json:"publisher_username"`
     RedirectPath       string          `json:"redirect_path"`
     CreatedAt          int64           `json:"created_at"`
-}
-
-type AdDTO struct {
-	ID        uint
-	Text      string
-	ImagePath string
-	Bid       int64
-	Website   string
 }
 
 func encrypt(data []byte, key []byte) (string, error) {
@@ -96,13 +90,13 @@ func GenerateToken(interaction InteractionType, adID uint, publisherUsername, re
     return generateToken(interaction, adID, publisherUsername, redirectPath, privateKey)
 }
 
-var adsList = make([]*AdDTO, 0)
+var adsList = make([]*dto.AdDTO, 0)
 
-func isBetterThan(lhs, rhs *AdDTO) bool {
+func isBetterThan(lhs, rhs *dto.AdDTO) bool {
 	return rhs.Bid > lhs.Bid
 }
 
-func GetBestAd() (*AdDTO, error) {
+func GetBestAd() (*dto.AdDTO, error) {
 	if len(adsList) == 0 {
 		return nil, fmt.Errorf("no ad was found")
 	}
@@ -120,8 +114,8 @@ func GetBestAd() (*AdDTO, error) {
 
 // WARNING: not tested yet
 func updateAdsList() error {
-	adsList = append(adsList, &AdDTO{ID: 1, Text: "salam", ImagePath: "somewhere", Bid: 30, Website: "google.com"})
-	adsList = append(adsList, &AdDTO{ID: 2, Text: "khodafez", ImagePath: "somewhere but not here", Bid: 40, Website: "duckduckgo.com"})
+	adsList = append(adsList, &dto.AdDTO{ID: 1, Text: "salam", ImagePath: "somewhere", Bid: 30, Website: "google.com"})
+	adsList = append(adsList, &dto.AdDTO{ID: 2, Text: "khodafez", ImagePath: "somewhere but not here", Bid: 40, Website: "duckduckgo.com"})
 	fmt.Println("Yayyyyyyyyyy!")
 	resp, err := http.Get(getAdsAPIPath)
 	if err != nil {
@@ -138,12 +132,12 @@ func updateAdsList() error {
 		return fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	var ads []AdDTO
+	var ads []dto.AdDTO
 	if err := json.Unmarshal(body, &ads); err != nil {
 		return fmt.Errorf("failed to unmarshal ads: %v", err)
 	}
 
-	var newAdsList []*AdDTO
+	var newAdsList []*dto.AdDTO
 	for _, ad := range ads {
 		newAdsList = append(newAdsList, &ad)
 	}
