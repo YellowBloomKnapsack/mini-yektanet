@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
-	"YellowBloomKnapsack/mini-yektanet/AdServer/handlers"
-	"YellowBloomKnapsack/mini-yektanet/AdServer/logic"
+	"YellowBloomKnapsack/mini-yektanet/adserver/handlers"
+	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
 )
 
 func main() {

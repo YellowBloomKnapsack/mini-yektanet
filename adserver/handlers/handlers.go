@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"YellowBloomKnapsack/mini-yektanet/AdServer/logic"
+	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
 
 	"net/http"
 	"os"
