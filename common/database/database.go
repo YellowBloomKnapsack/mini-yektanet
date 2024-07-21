@@ -28,4 +28,7 @@ func InitDB() {
 	}
 
 	DB.AutoMigrate(&models.Publisher{})
+	DB.AutoMigrate(&models.Ad{})
+	DB.AutoMigrate(&models.AdsInteraction{})
+	DB.AutoMigrate(&models.Advertiser{})
 }
