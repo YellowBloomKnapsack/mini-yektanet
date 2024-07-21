@@ -110,11 +110,8 @@ func GetBestAd() (*dto.AdDTO, error) {
 	return bestAd, nil
 }
 
-// WARNING: not tested yet
 func updateAdsList() error {
-	adsList = append(adsList, &dto.AdDTO{ID: 1, Text: "salam", ImagePath: "somewhere", Bid: 30, Website: "google.com"})
-	adsList = append(adsList, &dto.AdDTO{ID: 2, Text: "khodafez", ImagePath: "somewhere but not here", Bid: 40, Website: "duckduckgo.com"})
-	fmt.Println("Yayyyyyyyyyy!")
+	fmt.Println("Fetching ads from panel API")
 
 	getAdsAPIPath := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API")
 
