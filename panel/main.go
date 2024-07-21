@@ -1,9 +1,10 @@
-package main
+package panel
 
 import (
 	"log"
 	"os"
 
+	"YellowBloomKnapsack/mini-yektanet/panel/handlers"
 	"YellowBloomKnapsack/mini-yektanet/common/database"
 
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,12 @@ func main() {
 
 	r.LoadHTMLGlob("templates/*")
 	r.Static("/static", "./static")
+
+	r.GET("/advertiser/:username/panel", handlers.AdvertiserPanel)
+	r.POST("/advertiser/:username/add-funds", handlers.AddFunds)
+	r.POST("/advertiser/:username/create-ad", handlers.CreateAd)
+	r.POST("/advertiser/:username/toggle-ad", handlers.ToggleAd)
+	r.GET("/advertiser/:username/ad-report/:id", handlers.AdReport)
 
 	port := os.Getenv("PANEL_PORT")
 	if port == "" {
