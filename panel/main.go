@@ -1,4 +1,4 @@
-package panel
+package main
 
 import (
 	"log"
