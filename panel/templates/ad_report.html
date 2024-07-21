@@ -9,6 +9,7 @@
     <h1>Ad Report</h1>
     <p>Ad: {{ .Ad.Text }}</p>
     <p>Image: <img src="{{ .Ad.ImagePath }}" alt="{{ .Ad.Text }}"></p>
+    <p>Website: <a href="{{.Website}}">{{.Website}}</a></p>
     <p>Impressions: {{ .Impressions }}</p>
     <p>Clicks: {{ .Clicks }}</p>
     <p>CTR: {{ printf "%.2f%%" .CTR }}</p>

@@ -1,4 +1,4 @@
-package advertiserhandler
+package handlers
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ func AdvertiserPanel(c *gin.Context) {
 	result := database.DB.Preload("Ads").Where("username = ?", advertiserUserName).First(&advertiser)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
-			fmt.Fprintln(os.Stdout, []any{"No advertiser found with username %s, creating a new one.", advertiserUserName}...)
+			fmt.Println("No advertiser found with username %s, creating a new one.", advertiserUserName)
 			newAdvertiser := models.Advertiser{
 				Username: advertiserUserName,
 				Balance:  0,
@@ -67,6 +67,7 @@ func CreateAd(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
 	title := c.PostForm("title")
+	website := c.PostForm("website")
 	bid, _ := strconv.ParseInt(c.PostForm("bid"), 10, 64)
 
 	// Handle file upload
@@ -97,6 +98,7 @@ func CreateAd(c *gin.Context) {
 		ImagePath:    "/" + filepath, // Store the path relative to the server root
 		Bid:          bid,
 		AdvertiserID: advertiser.ID,
+		Website: website,
 	}
 
 	database.DB.Create(&ad)

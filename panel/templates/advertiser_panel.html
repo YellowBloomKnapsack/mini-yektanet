@@ -22,6 +22,7 @@
             <h2>Create New Ad</h2>
             <form action="/advertiser/{{ .Username }}/create-ad" method="POST" enctype="multipart/form-data">
                 <input type="text" name="title" placeholder="Ad Title" required>
+                <input type="text" name="website" placeholder="Ad Website" required>
                 <input type="file" name="image" accept="image/*" required>
                 <input type="number" name="bid" placeholder="Bid per Click" required>
                 <button type="submit">Create Ad</button>
