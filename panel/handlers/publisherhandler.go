@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"YellowBloomKnapsack/mini-yektanet/common/database"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
+	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"fmt"
 	"net/http"
 	"os"

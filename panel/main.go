@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"YellowBloomKnapsack/mini-yektanet/common/database"
+	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/panel/handlers"
 
 	"github.com/gin-gonic/gin"

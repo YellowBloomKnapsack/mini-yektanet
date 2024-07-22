@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"YellowBloomKnapsack/mini-yektanet/common/database"
+	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
 
 	"github.com/gin-gonic/gin"
@@ -50,7 +50,16 @@ func AdvertiserPanel(c *gin.Context) {
 func AddFunds(c *gin.Context) {
 	advertiserUserName := c.Param("username")
 
-	amount, _ := strconv.ParseInt(c.PostForm("amount"), 10, 64)
+	amount, err := strconv.ParseInt(c.PostForm("amount"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid amount"})
+		return
+	}
+
+	if amount <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid amount"})
+		return
+	}
 
 	database.DB.Model(&models.Advertiser{}).Where("username = ?", advertiserUserName).Update("balance", gorm.Expr("balance + ?", amount))
 
