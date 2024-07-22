@@ -5,7 +5,7 @@ import (
 	"os"
 
 	// "YellowBloomKnapsack/mini-yektanet/common/database"
-    "YellowBloomKnapsack/mini-yektanet/eventserver/handlers"
+	"YellowBloomKnapsack/mini-yektanet/eventserver/handlers"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
