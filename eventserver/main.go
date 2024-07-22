@@ -5,19 +5,20 @@ import (
 	"os"
 
 	// "YellowBloomKnapsack/mini-yektanet/common/database"
+    "YellowBloomKnapsack/mini-yektanet/eventserver/handlers"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	if err := godotenv.Load(".env", "../common/.env"); err != nil {
+	if err := godotenv.Load(".env", "../common/.env", "../adserver/.env"); err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	// TODO: convert to api call
-	// database.InitDB()
 
 	r := gin.Default()
+
+	r.POST(os.Getenv("CLICK_REQ_PATH"), handlers.PostClick)
 
 	port := os.Getenv("EVENT_SERVER_PORT")
 	if port == "" {

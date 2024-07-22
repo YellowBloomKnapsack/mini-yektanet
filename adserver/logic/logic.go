@@ -1,30 +1,93 @@
 package logic
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
-	"time"
+    "crypto/aes"
+    "crypto/cipher"
+    "crypto/rand"
+    "encoding/base64"
+    "encoding/json"
+    "time"
+    "io"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
-	"YellowBloomKnapsack/mini-yektanet/common/models"
 )
+
+var (
+    tmpPrivateKey string
+    privateKey []byte
+)
+
+func Init() {
+    tmpPrivateKey = os.Getenv("PRIVATE_KEY")
+    privateKey, _ = base64.StdEncoding.DecodeString(tmpPrivateKey)
+}
+
+type InteractionType uint8
 
 const (
 	getAdsAPIPath = "localhsot:8082/ads" // TODO: make this an env var in panel
+
+	ImpressionType InteractionType = 0
+	ClickType InteractionType= 1
 )
 
-func ToAdDTO(dbAd models.Ad) *dto.AdDTO {
-	return &dto.AdDTO{
-		ID:        dbAd.ID,
-		Text:      dbAd.Text,
-		ImagePath: dbAd.ImagePath,
-		Bid:       dbAd.Bid,
-		Website:   dbAd.Website,
-	}
+type CustomToken struct {
+    Interaction        InteractionType `json:"interaction"`
+    AdID               uint            `json:"ad_id"`
+    PublisherUsername  string          `json:"publisher_username"`
+    RedirectPath       string          `json:"redirect_path"`
+    CreatedAt          int64           `json:"created_at"`
+}
+
+func encrypt(data []byte, key []byte) (string, error) {
+    block, err := aes.NewCipher(key)
+    if err != nil {
+        return "", err
+    }
+
+    gcm, err := cipher.NewGCM(block)
+    if err != nil {
+        return "", err
+    }
+
+    nonce := make([]byte, gcm.NonceSize())
+    if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+        return "", err
+    }
+
+    ciphertext := gcm.Seal(nonce, nonce, data, nil)
+    return base64.StdEncoding.EncodeToString(ciphertext), nil
+}
+
+func generateToken(interaction InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error) {
+    token := CustomToken{
+        Interaction:        interaction,
+        AdID:               adID,
+        PublisherUsername:  publisherUsername,
+        RedirectPath:       redirectPath,
+        CreatedAt:          time.Now().Unix(),
+    }
+
+    tokenBytes, err := json.Marshal(token)
+    if err != nil {
+        return "", err
+    }
+
+    encryptedToken, err := encrypt(tokenBytes, key)
+    if err != nil {
+        return "", err
+    }
+
+    return encryptedToken, nil
+}
+
+func GenerateToken(interaction InteractionType, adID uint, publisherUsername, redirectPath string) (string, error) {
+    return generateToken(interaction, adID, publisherUsername, redirectPath, privateKey)
 }
 
 var adsList = make([]*dto.AdDTO, 0)
@@ -69,14 +132,14 @@ func updateAdsList() error {
 		return fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	var ads []models.Ad
+	var ads []dto.AdDTO
 	if err := json.Unmarshal(body, &ads); err != nil {
 		return fmt.Errorf("failed to unmarshal ads: %v", err)
 	}
 
 	var newAdsList []*dto.AdDTO
 	for _, ad := range ads {
-		newAdsList = append(newAdsList, ToAdDTO(ad))
+		newAdsList = append(newAdsList, &ad)
 	}
 
 	adsList = newAdsList
