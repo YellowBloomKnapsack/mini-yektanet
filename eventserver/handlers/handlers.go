@@ -18,13 +18,6 @@ import (
 var clickTokens = make(map[string]bool)
 var impressionTokens = make(map[string]bool)
 
-type EventPayload struct {
-	AdID         string `json:"ad_id"`
-	PublisherID  string `json:"publisher_id"`
-	Token        string `json:"token"`
-	RedirectPath string `json:"redirect_path"`
-}
-
 type TokenRequest struct {
 	Token string `json:"token"`
 }
