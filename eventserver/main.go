@@ -7,9 +7,9 @@ import (
 	// "YellowBloomKnapsack/mini-yektanet/common/database"
 	"YellowBloomKnapsack/mini-yektanet/eventserver/handlers"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/gin-contrib/cors"
 )
 
 func main() {
@@ -18,10 +18,10 @@ func main() {
 	}
 
 	r := gin.Default()
-	
+
 	r.Use(cors.New(cors.Config{
-			AllowAllOrigins: true,
-		}))
+		AllowAllOrigins: true,
+	}))
 
 	r.POST(os.Getenv("CLICK_REQ_PATH"), handlers.PostClick)
 

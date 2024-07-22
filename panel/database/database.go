@@ -12,6 +12,29 @@ import (
 
 var DB *gorm.DB
 
+func initPublishers() error {
+    var count int64
+    DB.Model(&models.Publisher{}).Count(&count)
+
+	if count != 0 {
+		return nil
+	}
+
+    publishers := []models.Publisher{
+        {Username: "varzesh3"},
+        {Username: "digikala"},
+        {Username: "zoomit"},
+        {Username: "sheypoor"},
+        {Username: "filimo"},
+    }
+
+    if err := DB.Create(&publishers).Error; err != nil {
+        return err
+    }
+
+    return nil
+}
+
 func InitDB() {
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
@@ -31,4 +54,8 @@ func InitDB() {
 	DB.AutoMigrate(&models.Ad{})
 	DB.AutoMigrate(&models.AdsInteraction{})
 	DB.AutoMigrate(&models.Advertiser{})
+	err = initPublishers()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
