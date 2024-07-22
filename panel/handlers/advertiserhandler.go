@@ -16,7 +16,6 @@ import (
 )
 
 func AdvertiserPanel(c *gin.Context) {
-	// TODO: Get advertiser ID from session
 	advertiserUserName := c.Param("username")
 
 	var advertiser models.Advertiser
@@ -69,6 +68,10 @@ func CreateAd(c *gin.Context) {
 	title := c.PostForm("title")
 	website := c.PostForm("website")
 	bid, _ := strconv.ParseInt(c.PostForm("bid"), 10, 64)
+	if bid <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid bid amount"})
+		return
+	}
 
 	// Handle file upload
 	file, _ := c.FormFile("image")
@@ -98,7 +101,7 @@ func CreateAd(c *gin.Context) {
 		ImagePath:    "/" + filepath, // Store the path relative to the server root
 		Bid:          bid,
 		AdvertiserID: advertiser.ID,
-		Website: website,
+		Website:      website,
 	}
 
 	database.DB.Create(&ad)
@@ -146,5 +149,6 @@ func AdReport(c *gin.Context) {
 		"Clicks":      clicks,
 		"CTR":         ctr,
 		"TotalCost":   ad.TotalCost,
+		"Website":     ad.Website,
 	})
 }

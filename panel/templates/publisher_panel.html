@@ -1,0 +1,127 @@
+<!-- templates/publisher_panel.html (updated) -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publisher Panel</title>
+    <link rel="stylesheet" href="/static/css/styles-publisher.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Publisher Panel</h1>
+        <h2>Welcome, {{ .Publisher.Username }}</h2>
+
+        <h3>Your Ad Script</h3>
+        <div class="script-box">
+            {{ .Script }}
+        </div>
+
+        <h3>Account Balance</h3>
+        <div class="balance-section">
+            <p>Current Balance: <span id="currentBalance">{{ .Publisher.Balance }}</span></p>
+            <div class="withdraw-form">
+                <input type="number" id="withdrawAmount" placeholder="Enter amount to withdraw" min="1"
+                    max="{{ .Publisher.Balance }}">
+                <button onclick="withdrawBalance()">Withdraw</button>
+            </div>
+        </div>
+        <h3>Performance Over Time</h3>
+        <div class="chart-container">
+            <canvas id="performanceChart"></canvas>
+        </div>
+        <!-- <h3>Statistics</h3>
+        <div class="stats">
+            <div class="stat-item">
+                <h4>Impressions</h4>
+                <p>{{ .Impressions }}</p>
+            </div>
+            <div class="stat-item">
+                <h4>Clicks</h4>
+                <p>{{ .Clicks }}</p>
+            </div>
+            <div class="stat-item">
+                <h4>Revenue</h4>
+                <p>{{ .Revenue }}</p>
+            </div>
+        </div> -->
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        function withdrawBalance() {
+            const amount = document.getElementById('withdrawAmount').value;
+            if (amount <= 0) {
+                alert('Invalid withdrawal amount');
+                return;
+            }
+
+            fetch('/publisher/{{ .Publisher.Username }}/withdraw', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `amount=${amount}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        alert(data.message);
+                        document.getElementById('currentBalance').textContent = data.newBalance;
+                        document.getElementById('withdrawAmount').max = data.newBalance;
+                        document.getElementById('withdrawAmount').value = '';
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        }
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ .ChartData.Dates }},
+            datasets: [{
+                label: 'Impressions',
+                data: {{ .ChartData.Impressions }},
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+            }, {
+                label: 'Clicks',
+                data: {{ .ChartData.Clicks }},
+            borderColor: 'rgb(255, 99, 132)',
+            tension: 0.1
+            }, {
+                label: 'Revenue',
+                data: {{ .ChartData.Revenues }},
+            borderColor: 'rgb(54, 162, 235)',
+            tension: 0.1
+            }]
+        },
+            options: {
+            responsive: true,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Count / Amount'
+                    }
+                }
+            }
+        }
+    });
+    </script>
+</body>
+
+</html>
