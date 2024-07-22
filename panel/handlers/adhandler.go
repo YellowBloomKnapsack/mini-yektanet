@@ -26,7 +26,7 @@ func GetActiveAds(c *gin.Context) {
 			Text:      ad.Text,
 			ImagePath: ad.ImagePath,
 			Bid:       ad.Bid,
-			Website:   "", // You might want to add a Website field to your Ad model if needed
+			Website:   ad.Website,
 		}
 		adDTOs = append(adDTOs, adDTO)
 	}
