@@ -19,7 +19,7 @@ func GetAd(c *gin.Context) {
 
 	eventServerPort := os.Getenv("EVENT_SERVER_PORT")
 	hostName := os.Getenv("HOSTNAME")
-	eventServerURL := hostName + ":" + eventServerPort
+	eventServerURL := "http://"+hostName + ":" + eventServerPort
 
 	clickReqPath := os.Getenv("CLICK_REQ_PATH")
 	impressionReqPath := os.Getenv("IMPRESSION_REQ_PATH")

@@ -9,6 +9,7 @@ import (
 
 	"YellowBloomKnapsack/mini-yektanet/adserver/handlers"
 	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
+	"github.com/gin-contrib/cors"
 )
 
 func main() {
@@ -21,7 +22,11 @@ func main() {
 
 	r := gin.Default()
 
+	r.Use(cors.New(cors.Config{
+		AllowAllOrigins: true,
+	}))
 	r.GET("/:publisherUsername", handlers.GetAd)
+	r.Static("/static", "../publisherwebsite/static")
 
 	port := os.Getenv("AD_SERVER_PORT")
 	if port == "" {
