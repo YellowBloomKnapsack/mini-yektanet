@@ -111,7 +111,7 @@ func GetBestAd() (*dto.AdDTO, error) {
 }
 
 func updateAdsList() error {
-	fmt.Println("Fetching ads from panel API")
+	fmt.Println("Fetching ads from panel API...")
 
 	getAdsAPIPath := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API")
 
@@ -140,6 +140,7 @@ func updateAdsList() error {
 		newAdsList = append(newAdsList, &ad)
 	}
 
+	fmt.Printf("%d new ads were fetched.\n", len(newAdsList) - len(adsList))
 	adsList = newAdsList
 
 	return nil
@@ -154,7 +155,9 @@ func StartTicker() {
 		select {
 		case <-ticker.C:
 			err := updateAdsList()
-			fmt.Println(err)
+			if err != nil {
+			    fmt.Println(err)
+			}
 		}
 	}
 }
