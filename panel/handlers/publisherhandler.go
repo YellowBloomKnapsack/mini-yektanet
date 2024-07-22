@@ -33,10 +33,9 @@ func PublisherPanel(c *gin.Context) {
 		// return
 	}
 
-	script := fmt.Sprintf("<script src='%s:%s/js/%s.js'></script>",
+	script := fmt.Sprintf("<script src='%s:%s/js/script.js'></script>",
 		os.Getenv("HOSTNAME"),
-		os.Getenv("PUBLISHER_WEBSITE_PORT"),
-		publisher.Username)
+		os.Getenv("PUBLISHER_WEBSITE_PORT"))
 
 	// Prepare data for the chart
 	chartData := prepareChartData(publisher.AdsInteraction)
@@ -58,7 +57,7 @@ func WithdrawPublisherBalance(c *gin.Context) {
 	}
 
 	amountStr := c.PostForm("amount")
-	amount, err := strconv.ParseInt(amountStr, 10, 64)
+	amount, err := strconv.ParseInt(amountStr, INTBASE, INTBIT64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid amount"})
 		return

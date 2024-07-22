@@ -8,11 +8,17 @@ import (
 	"strconv"
 	"time"
 
-	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
+	"YellowBloomKnapsack/mini-yektanet/panel/database"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+)
+
+const (
+	INTBASE = 10
+	INTBIT32  = 32
+	INTBIT64  = 64
 )
 
 func AdvertiserPanel(c *gin.Context) {
@@ -50,7 +56,7 @@ func AdvertiserPanel(c *gin.Context) {
 func AddFunds(c *gin.Context) {
 	advertiserUserName := c.Param("username")
 
-	amount, err := strconv.ParseInt(c.PostForm("amount"), 10, 64)
+	amount, err := strconv.ParseInt(c.PostForm("amount"), INTBASE, INTBIT64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid amount"})
 		return
@@ -76,7 +82,7 @@ func CreateAd(c *gin.Context) {
 	}
 	title := c.PostForm("title")
 	website := c.PostForm("website")
-	bid, _ := strconv.ParseInt(c.PostForm("bid"), 10, 64)
+	bid, _ := strconv.ParseInt(c.PostForm("bid"), INTBASE, INTBIT64)
 	if bid <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid bid amount"})
 		return
@@ -132,7 +138,7 @@ func ToggleAd(c *gin.Context) {
 }
 
 func AdReport(c *gin.Context) {
-	adID, _ := strconv.ParseUint(c.Param("id"), 10, 32)
+	adID, _ := strconv.ParseUint(c.Param("id"), INTBASE, INTBIT32)
 
 	var ad models.Ad
 	database.DB.Preload("AdsInteractions").Preload("Advertiser").First(&ad, adID)
