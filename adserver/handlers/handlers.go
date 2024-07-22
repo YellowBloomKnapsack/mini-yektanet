@@ -1,13 +1,15 @@
 package handlers
 
 import (
-	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
-
 	"fmt"
+	"encoding/base64"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
+
+	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
+	"YellowBloomKnapsack/mini-yektanet/common/tokeninterface"
 )
 
 func GetAd(c *gin.Context) {
@@ -26,8 +28,11 @@ func GetAd(c *gin.Context) {
 
 	publisherUsername := c.Param("publisherUsername")
 
-	clickToken, _ := logic.GenerateToken(logic.ClickType, chosenAd.ID, publisherUsername, chosenAd.Website)
-	impressionToken, _ := logic.GenerateToken(logic.ImpressionType, chosenAd.ID, publisherUsername, chosenAd.Website)
+	privateKey := os.Getenv("PRIVATE_KEY")
+	key, _ := base64.StdEncoding.DecodeString(privateKey)
+
+	clickToken, _ := tokeninterface.GenerateToken(tokeninterface.ClickType, chosenAd.ID, publisherUsername, chosenAd.Website, key)
+	impressionToken, _ := tokeninterface.GenerateToken(tokeninterface.ImpressionType, chosenAd.ID, publisherUsername, chosenAd.Website, key)
 
 	fmt.Println(clickToken)
 	fmt.Println(impressionToken)

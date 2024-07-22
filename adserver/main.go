@@ -17,7 +17,6 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	logic.Init()
 	go logic.StartTicker()
 
 	r := gin.Default()

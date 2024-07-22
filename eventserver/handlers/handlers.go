@@ -1,18 +1,18 @@
 package handlers
 
 import (
-	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
 	"time"
+
+	"YellowBloomKnapsack/mini-yektanet/common/dto"
+	"YellowBloomKnapsack/mini-yektanet/common/tokeninterface"
+
+	"github.com/gin-gonic/gin"
 )
 
 var clickTokens = make(map[string]bool)
@@ -33,7 +33,7 @@ func PostClick(c *gin.Context) {
 	}
 
 	token := req.Token
-	data, err := verifyToken(token, key)
+	data, err := tokeninterface.VerifyToken(token, key)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
@@ -83,7 +83,7 @@ func PostImpression(c *gin.Context) {
 	}
 
 	token := req.Token
-	data, err := verifyToken(token, key)
+	data, err := tokeninterface.VerifyToken(token, key)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
@@ -118,61 +118,4 @@ func PostImpression(c *gin.Context) {
 			fmt.Printf("failed to fetch ads: status code %d\n", resp.StatusCode)
 		}
 	}
-
-	//c.JSON(http.StatusOK, gin.H{"status": "impression registered"})
-}
-
-type InteractionType uint8
-
-const (
-	ImpressionType InteractionType = 0
-	ClickType      InteractionType = 1
-)
-
-type CustomToken struct {
-	Interaction       InteractionType `json:"interaction"`
-	AdID              uint            `json:"ad_id"`
-	PublisherUsername string          `json:"publisher_username"`
-	RedirectPath      string          `json:"redirect_path"`
-	CreatedAt         int64           `json:"created_at"`
-}
-
-func decrypt(encryptedData string, key []byte) ([]byte, error) {
-	data, err := base64.StdEncoding.DecodeString(encryptedData)
-	if err != nil {
-		return nil, err
-	}
-
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-
-	nonceSize := gcm.NonceSize()
-	if len(data) < nonceSize {
-		return nil, errors.New("ciphertext too short")
-	}
-
-	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
-	return gcm.Open(nil, nonce, ciphertext, nil)
-}
-
-func verifyToken(encryptedToken string, key []byte) (*CustomToken, error) {
-	tokenBytes, err := decrypt(encryptedToken, key)
-	if err != nil {
-		return nil, err
-	}
-
-	var token CustomToken
-	err = json.Unmarshal(tokenBytes, &token)
-	if err != nil {
-		return nil, err
-	}
-
-	return &token, nil
 }
