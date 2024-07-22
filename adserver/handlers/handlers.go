@@ -3,8 +3,8 @@ package handlers
 import (
 	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
 
-	"net/http"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -33,9 +33,9 @@ func GetAd(c *gin.Context) {
 	fmt.Println(impressionToken)
 
 	c.JSON(http.StatusOK, gin.H{
-		"image_link":       chosenAd.ImagePath,
-		"title":            chosenAd.Text,
-		"impression_link":  eventServerURL + "/" + impressionReqPath + "?token=" + impressionToken,
-		"click_link":       eventServerURL + "/" + clickReqPath + "?token=" + clickToken,
+		"image_link":      chosenAd.ImagePath,
+		"title":           chosenAd.Text,
+		"impression_link": eventServerURL + "/" + impressionReqPath + "?token=" + impressionToken,
+		"click_link":      eventServerURL + "/" + clickReqPath + "?token=" + clickToken,
 	})
 }
