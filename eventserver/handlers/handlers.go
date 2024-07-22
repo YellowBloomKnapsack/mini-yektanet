@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"YellowBloomKnapsack/mini-yektanet/common/dto"
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
@@ -10,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
+	"time"
 )
 
 // "math/rand"
@@ -29,8 +32,66 @@ type EventPayload struct {
 	RedirectPath string `json:"redirect_path"`
 }
 
+//
+//func convertCustomTokenToInteractionDto(token CustomToken) InteractionDto {
+//	return
+//}
+
 func PostClick(c *gin.Context) {
 
+	privateKey := os.Getenv("PRIVATE_KEY")
+	key, _ := base64.StdEncoding.DecodeString(privateKey)
+
+	token := c.Query("token")
+	data, err := verifyToken(token, key)
+	if err != nil {
+		return
+	}
+
+	fmt.Println(data)
+
+	_, present := clickTokens[token]
+	if !present {
+		clickTokens[token] = true
+		fmt.Println("jadid")
+
+		url := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("INTERACTION_CLICK_API")
+
+		fmt.Println(url)
+
+		dataDto := dto.InteractionDto{
+			PublisherUsername: data.PublisherUsername,
+			ClickTime:         time.Now(),
+			AdID:              data.AdID,
+		}
+
+		jsonData, err := json.Marshal(dataDto)
+
+		if err != nil {
+			fmt.Errorf("failed to marshal InteractionDto to JSON: %v", err)
+			return
+		}
+
+		// Send HTTP POST request with JSON data
+		resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			fmt.Errorf("failed to send POST request: %v", err)
+			return
+		}
+
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusCreated {
+			fmt.Errorf("failed to fetch ads: status code %d", resp.StatusCode)
+		}
+
+	}
+
+	// redirect anyways
+	c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
+}
+
+func PostImpression(c *gin.Context) {
 	privateKey := os.Getenv("PRIVATE_KEY")
 	key, _ := base64.StdEncoding.DecodeString(privateKey)
 
@@ -49,25 +110,7 @@ func PostClick(c *gin.Context) {
 		// 1) request panel api
 	}
 
-	// redirect anyways
-	c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
-}
-
-func PostImpression(c *gin.Context) {
-	var requestBody EventPayload
-	if err := c.BindJSON(&requestBody); err != nil {
-		fmt.Println("Something wrong happened")
-		return
-	}
-
-	_, present := impressionTokens[requestBody.Token]
-	if !present {
-		impressionTokens[requestBody.Token] = true
-		fmt.Println("jadid")
-		// 1) request panel api
-	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "impression registered"})
+	//c.JSON(http.StatusOK, gin.H{"status": "impression registered"})
 
 }
 

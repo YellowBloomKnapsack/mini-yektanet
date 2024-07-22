@@ -12,13 +12,15 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(".env", "../common/.env", "../adserver/.env"); err != nil {
+	if err := godotenv.Load(".env", "../common/.env", "../adserver/.env", "../panel/.env"); err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
 	r := gin.Default()
 
 	r.POST(os.Getenv("CLICK_REQ_PATH"), handlers.PostClick)
+
+	r.POST(os.Getenv("IMPRESSION_REQ_PATH"), handlers.PostImpression)
 
 	port := os.Getenv("EVENT_SERVER_PORT")
 	if port == "" {
