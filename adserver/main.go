@@ -26,7 +26,7 @@ func main() {
 		AllowAllOrigins: true,
 	}))
 	r.GET("/:publisherUsername", handlers.GetAd)
-	r.Static("/static", "../publisherwebsite/static")
+	// r.Static("/static", "../publisherwebsite/static")
 
 	port := os.Getenv("AD_SERVER_PORT")
 	if port == "" {
