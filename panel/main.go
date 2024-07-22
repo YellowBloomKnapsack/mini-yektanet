@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/panel/handlers"
 
@@ -37,6 +38,9 @@ func main() {
 		publisher.GET("/:username/panel", handlers.PublisherPanel)
 		publisher.POST("/:username/withdraw", handlers.WithdrawPublisherBalance)
 	}
+	r.GET(os.Getenv("GET_ADS_API"), handlers.GetActiveAds)
+	r.POST(os.Getenv("INTERACTION_CLICK_API"), handlers.HandleAdInteraction(models.Click))
+	r.POST(os.Getenv("INTERACTION_IMPRESSION_API"), handlers.HandleAdInteraction(models.Impression))
 
 	port := os.Getenv("PANEL_PORT")
 	if port == "" {

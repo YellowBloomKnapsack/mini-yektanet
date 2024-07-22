@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
 )
 
@@ -16,16 +17,8 @@ const (
 	getAdsAPIPath = "localhsot:8082/ads" // TODO: make this an env var in panel
 )
 
-type AdDTO struct {
-	ID        uint
-	Text      string
-	ImagePath string
-	Bid       int64
-	Website   string
-}
-
-func ToAdDTO(dbAd models.Ad) *AdDTO {
-	return &AdDTO{
+func ToAdDTO(dbAd models.Ad) *dto.AdDTO {
+	return &dto.AdDTO{
 		ID:        dbAd.ID,
 		Text:      dbAd.Text,
 		ImagePath: dbAd.ImagePath,
@@ -34,13 +27,13 @@ func ToAdDTO(dbAd models.Ad) *AdDTO {
 	}
 }
 
-var adsList = make([]*AdDTO, 0)
+var adsList = make([]*dto.AdDTO, 0)
 
-func isBetterThan(lhs, rhs *AdDTO) bool {
+func isBetterThan(lhs, rhs *dto.AdDTO) bool {
 	return rhs.Bid > lhs.Bid
 }
 
-func GetBestAd() (*AdDTO, error) {
+func GetBestAd() (*dto.AdDTO, error) {
 	if len(adsList) == 0 {
 		return nil, fmt.Errorf("no ad was found")
 	}
@@ -58,8 +51,8 @@ func GetBestAd() (*AdDTO, error) {
 
 // WARNING: not tested yet
 func updateAdsList() error {
-	adsList = append(adsList, &AdDTO{ID: 1, Text: "salam", ImagePath: "somewhere", Bid: 30, Website: "google.com"})
-	adsList = append(adsList, &AdDTO{ID: 2, Text: "khodafez", ImagePath: "somewhere but not here", Bid: 40, Website: "duckduckgo.com"})
+	adsList = append(adsList, &dto.AdDTO{ID: 1, Text: "salam", ImagePath: "somewhere", Bid: 30, Website: "google.com"})
+	adsList = append(adsList, &dto.AdDTO{ID: 2, Text: "khodafez", ImagePath: "somewhere but not here", Bid: 40, Website: "duckduckgo.com"})
 	fmt.Println("Yayyyyyyyyyy!")
 	resp, err := http.Get(getAdsAPIPath)
 	if err != nil {
@@ -81,7 +74,7 @@ func updateAdsList() error {
 		return fmt.Errorf("failed to unmarshal ads: %v", err)
 	}
 
-	var newAdsList []*AdDTO
+	var newAdsList []*dto.AdDTO
 	for _, ad := range ads {
 		newAdsList = append(newAdsList, ToAdDTO(ad))
 	}
