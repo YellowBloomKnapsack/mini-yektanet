@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"YellowBloomKnapsack/mini-yektanet/AdServer/logic"
+	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
 
 	"net/http"
 	"os"
@@ -35,5 +35,6 @@ func GetAd(c *gin.Context) {
 		"click_link":       eventServerURL + "/" + clickReqPath,
 		"impression_token": impressionToken,
 		"click_token":      clickToken,
+		"redirect_path":    chosenAd.Website,
 	})
 }
