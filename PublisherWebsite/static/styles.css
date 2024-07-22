@@ -1,0 +1,56 @@
+body, h1, h2, p {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+header {
+    background: #fff;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+header h1 {
+    font-size: 24px;
+    color: #333;
+}
+
+#logo {
+    max-width: 150px;
+    height: auto;
+}
+
+main {
+    padding: 20px;
+    text-align: center;
+}
+
+#ad-container {
+    margin: 20px auto;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    display: inline-block;
+    text-align: center;
+}
+
+#ad-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+
+#ad-title {
+    font-size: 18px;
+    color: #333;
+    margin-top: 10px;
+}
