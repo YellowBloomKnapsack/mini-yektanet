@@ -15,7 +15,6 @@ JSON data received from AdServer must have the following fields:
 const arr = window.location.href.split('/')
 const publisherName = arr[arr.length-1]
 const AdServerAPILink = "http://localhost:8081"
-console.log(publisherName)
 
 fetch(AdServerAPILink+"/"+publisherName)
 .then((res) => {
@@ -24,6 +23,7 @@ fetch(AdServerAPILink+"/"+publisherName)
 	}
 	return res.json()
 }).then((data) => {
+    console.log(data)
 	const div = document.createElement("div")
 	const img = document.createElement("img")
 	img.src = data["image_link"]
@@ -44,10 +44,10 @@ fetch(AdServerAPILink+"/"+publisherName)
         }
     });
 
-    addEventListener('DOMContentLoaded', handler, false);
-    addEventListener('load', handler, false);
-    addEventListener('scroll', handler, false);
-    addEventListener('resize', handler, false);
+    addEventListener('DOMContentLoaded', impressionHandler, false);
+    addEventListener('load', impressionHandler, false);
+    addEventListener('scroll', impressionHandler, false);
+    addEventListener('resize', impressionHandler, false);
 })
 
 function clickHandler(data) {
@@ -56,7 +56,7 @@ function clickHandler(data) {
     })
 }
 
-const isElementInViewport = (el, partiallyVisible = true) => {
+const isElementInViewport = (el, partiallyVisible = false) => {
     const { top, left, bottom, right } = el.getBoundingClientRect();
     const { innerHeight, innerWidth } = window;
     return partiallyVisible
