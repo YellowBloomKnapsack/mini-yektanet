@@ -25,3 +25,6 @@
 **/.env
 **/uploads
 .vscode
+
+# .idea directory
+.idea
