@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advertiser Panel</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/styles-advertiser.css">
 </head>
 
 <body>
@@ -22,7 +22,7 @@
             <h2>Create New Ad</h2>
             <form action="/advertiser/{{ .Username }}/create-ad" method="POST" enctype="multipart/form-data">
                 <input type="text" name="title" placeholder="Ad Title" required>
-                <input type="text" name="website" placeholder="Ad Website" required>
+                <input type="url" name="website" placeholder="Ad Website" required>
                 <input type="file" name="image" accept="image/*" required>
                 <input type="number" name="bid" placeholder="Bid per Click" required>
                 <button type="submit">Create Ad</button>

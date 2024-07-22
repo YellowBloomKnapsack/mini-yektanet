@@ -8,15 +8,20 @@ import (
 	"strconv"
 	"time"
 
-	"YellowBloomKnapsack/mini-yektanet/common/database"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
+	"YellowBloomKnapsack/mini-yektanet/panel/database"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
+const (
+	INTBASE = 10
+	INTBIT32  = 32
+	INTBIT64  = 64
+)
+
 func AdvertiserPanel(c *gin.Context) {
-	// TODO: Get advertiser ID from session
 	advertiserUserName := c.Param("username")
 
 	var advertiser models.Advertiser
@@ -51,7 +56,16 @@ func AdvertiserPanel(c *gin.Context) {
 func AddFunds(c *gin.Context) {
 	advertiserUserName := c.Param("username")
 
-	amount, _ := strconv.ParseInt(c.PostForm("amount"), 10, 64)
+	amount, err := strconv.ParseInt(c.PostForm("amount"), INTBASE, INTBIT64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid amount"})
+		return
+	}
+
+	if amount <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid amount"})
+		return
+	}
 
 	database.DB.Model(&models.Advertiser{}).Where("username = ?", advertiserUserName).Update("balance", gorm.Expr("balance + ?", amount))
 
@@ -68,7 +82,11 @@ func CreateAd(c *gin.Context) {
 	}
 	title := c.PostForm("title")
 	website := c.PostForm("website")
-	bid, _ := strconv.ParseInt(c.PostForm("bid"), 10, 64)
+	bid, _ := strconv.ParseInt(c.PostForm("bid"), INTBASE, INTBIT64)
+	if bid <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid bid amount"})
+		return
+	}
 
 	// Handle file upload
 	file, _ := c.FormFile("image")
@@ -98,7 +116,7 @@ func CreateAd(c *gin.Context) {
 		ImagePath:    "/" + filepath, // Store the path relative to the server root
 		Bid:          bid,
 		AdvertiserID: advertiser.ID,
-		Website: website,
+		Website:      website,
 	}
 
 	database.DB.Create(&ad)
@@ -120,7 +138,7 @@ func ToggleAd(c *gin.Context) {
 }
 
 func AdReport(c *gin.Context) {
-	adID, _ := strconv.ParseUint(c.Param("id"), 10, 32)
+	adID, _ := strconv.ParseUint(c.Param("id"), INTBASE, INTBIT32)
 
 	var ad models.Ad
 	database.DB.Preload("AdsInteractions").Preload("Advertiser").First(&ad, adID)
@@ -146,5 +164,6 @@ func AdReport(c *gin.Context) {
 		"Clicks":      clicks,
 		"CTR":         ctr,
 		"TotalCost":   ad.TotalCost,
+		"Website":     ad.Website,
 	})
 }
