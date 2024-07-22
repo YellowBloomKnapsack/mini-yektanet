@@ -35,7 +35,9 @@ func GetAd(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"image_link":      chosenAd.ImagePath,
 		"title":           chosenAd.Text,
-		"impression_link": eventServerURL + "/" + impressionReqPath + "?token=" + impressionToken,
-		"click_link":      eventServerURL + "/" + clickReqPath + "?token=" + clickToken,
+		"impression_link": eventServerURL + "/" + impressionReqPath,
+		"click_link":      eventServerURL + "/" + clickReqPath,
+		"impression_token": impressionToken,
+		"click_token": clickToken,
 	})
 }
