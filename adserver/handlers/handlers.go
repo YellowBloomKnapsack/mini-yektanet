@@ -19,7 +19,7 @@ func GetAd(c *gin.Context) {
 
 	eventServerPort := os.Getenv("EVENT_SERVER_PORT")
 	hostName := os.Getenv("HOSTNAME")
-	eventServerURL := "http://"+hostName + ":" + eventServerPort
+	eventServerURL := "http://" + hostName + ":" + eventServerPort
 
 	clickReqPath := os.Getenv("CLICK_REQ_PATH")
 	impressionReqPath := os.Getenv("IMPRESSION_REQ_PATH")
@@ -33,11 +33,11 @@ func GetAd(c *gin.Context) {
 	fmt.Println(impressionToken)
 
 	c.JSON(http.StatusOK, gin.H{
-		"image_link":      chosenAd.ImagePath,
-		"title":           chosenAd.Text,
-		"impression_link": eventServerURL + "/" + impressionReqPath,
-		"click_link":      eventServerURL + "/" + clickReqPath,
+		"image_link":       chosenAd.ImagePath,
+		"title":            chosenAd.Text,
+		"impression_link":  eventServerURL + "/" + impressionReqPath,
+		"click_link":       eventServerURL + "/" + clickReqPath,
 		"impression_token": impressionToken,
-		"click_token": clickToken,
+		"click_token":      clickToken,
 	})
 }
