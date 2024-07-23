@@ -51,7 +51,7 @@ function clickHandler(data) {
         return res.json()
     })
     .then((data) => {
-        window.location.href = data.link
+        window.open(res.url)
     })
 }
 
