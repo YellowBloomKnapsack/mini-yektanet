@@ -88,6 +88,8 @@ func callClickApi(event ClickEvent) {
 	resp, err := http.Post(clickApiUrl, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Printf("failed to send POST request: %v\n", err)
+		// reinsert event to clickEvents if panel is down
+		clickEvents <- event
 		return
 	}
 	defer resp.Body.Close()
@@ -113,6 +115,8 @@ func callImpressionApi(event ImpressionEvent) {
 	resp, err := http.Post(impressionApiUrl, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Printf("failed to send POST request: %v\n", err)
+		// reinsert event to impressionEvents if panel is down
+		impressionEvents <- event
 		return
 	}
 	defer resp.Body.Close()
