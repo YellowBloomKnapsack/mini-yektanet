@@ -23,7 +23,7 @@ fetch(AdServerAPILink+"/"+publisherName)
     }
     return res.json()
 }).then((data) => {
-    // console.log(data)
+    console.log(data)
     const div = document.createElement("div")
     const img = document.createElement("img")
     img.src = data["image_link"]
@@ -36,9 +36,9 @@ fetch(AdServerAPILink+"/"+publisherName)
     let viewed = false
 
     const impressionHandler = onVisibilityChange(div, function() {
-        // console.log("here")
+        console.log("here")
         if(!viewed) {
-            // console.log("bro")
+            console.log("bro")
             viewed = true
             fetch(data["impression_link"], {
                 method: "POST",
@@ -61,6 +61,10 @@ function clickHandler(data) {
         body: JSON.stringify({
             token: data["click_token"]
         })
+    })
+    .then(res=>{
+        console.log(res)
+        window.location.href = res.url
     })
     // .then((res) => {
     //     if(!res.ok) {
