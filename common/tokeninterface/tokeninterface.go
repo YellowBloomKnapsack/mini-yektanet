@@ -9,22 +9,9 @@ import (
 	"io"
 	"time"
 	"errors"
+
+	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
-
-type InteractionType uint8
-
-const (
-	ImpressionType InteractionType = 0
-	ClickType      InteractionType = 1
-)
-
-type CustomToken struct {
-	Interaction       InteractionType `json:"interaction"`
-	AdID              uint            `json:"ad_id"`
-	PublisherUsername string          `json:"publisher_username"`
-	RedirectPath      string          `json:"redirect_path"`
-	CreatedAt         int64           `json:"created_at"`
-}
 
 func encrypt(data []byte, key []byte) (string, error) {
 	block, err := aes.NewCipher(key)
@@ -46,8 +33,8 @@ func encrypt(data []byte, key []byte) (string, error) {
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-func GenerateToken(interaction InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error) {
-	token := CustomToken{
+func GenerateToken(interaction dto.InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error) {
+	token := dto.CustomToken{
 		Interaction:       interaction,
 		AdID:              adID,
 		PublisherUsername: publisherUsername,
@@ -93,13 +80,13 @@ func decrypt(encryptedData string, key []byte) ([]byte, error) {
 	return gcm.Open(nil, nonce, ciphertext, nil)
 }
 
-func VerifyToken(encryptedToken string, key []byte) (*CustomToken, error) {
+func VerifyToken(encryptedToken string, key []byte) (*dto.CustomToken, error) {
 	tokenBytes, err := decrypt(encryptedToken, key)
 	if err != nil {
 		return nil, err
 	}
 
-	var token CustomToken
+	var token dto.CustomToken
 	err = json.Unmarshal(tokenBytes, &token)
 	if err != nil {
 		return nil, err

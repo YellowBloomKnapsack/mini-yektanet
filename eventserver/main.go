@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	// "YellowBloomKnapsack/mini-yektanet/common/database"
 	"YellowBloomKnapsack/mini-yektanet/eventserver/handlers"
+	"YellowBloomKnapsack/mini-yektanet/eventserver/eventschannel"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -17,6 +17,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+    eventschannel.Start()
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{

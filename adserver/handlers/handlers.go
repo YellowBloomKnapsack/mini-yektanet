@@ -10,6 +10,7 @@ import (
 
 	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
 	"YellowBloomKnapsack/mini-yektanet/common/tokeninterface"
+	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
 
 func GetAd(c *gin.Context) {
@@ -31,8 +32,8 @@ func GetAd(c *gin.Context) {
 	privateKey := os.Getenv("PRIVATE_KEY")
 	key, _ := base64.StdEncoding.DecodeString(privateKey)
 
-	clickToken, _ := tokeninterface.GenerateToken(tokeninterface.ClickType, chosenAd.ID, publisherUsername, chosenAd.Website, key)
-	impressionToken, _ := tokeninterface.GenerateToken(tokeninterface.ImpressionType, chosenAd.ID, publisherUsername, chosenAd.Website, key)
+	clickToken, _ := tokeninterface.GenerateToken(dto.ClickType, chosenAd.ID, publisherUsername, chosenAd.Website, key)
+	impressionToken, _ := tokeninterface.GenerateToken(dto.ImpressionType, chosenAd.ID, publisherUsername, chosenAd.Website, key)
 
 	fmt.Println(clickToken)
 	fmt.Println(impressionToken)
