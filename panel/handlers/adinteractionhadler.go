@@ -45,7 +45,7 @@ func HandleClickAdInteraction(c *gin.Context) {
 	// Create the interaction
 	interaction := models.AdsInteraction{
 		Type:        int(interactionType),
-		EventTime:   request.ClickTime,
+		EventTime:   request.EventTime,
 		AdID:        ad.ID,
 		PublisherID: publisher.ID,
 	}
@@ -154,7 +154,7 @@ func HandleImpressionAdInteraction(c *gin.Context) {
 	// Create the interaction
 	interaction := models.AdsInteraction{
 		Type:        int(interactionType),
-		EventTime:   request.ClickTime,
+		EventTime:   request.EventTime,
 		AdID:        ad.ID,
 		PublisherID: publisher.ID,
 	}
