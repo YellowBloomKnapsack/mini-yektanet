@@ -48,5 +48,5 @@ func main() {
 	if port == "" {
 		port = "8083"
 	}
-	r.Run(":" + port)
+	r.Run(os.Getenv("HOSTNAME") + ":" + port)
 }

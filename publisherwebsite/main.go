@@ -37,7 +37,7 @@ func main() {
 	if port == "" {
 		port = "8084"
 	}
-	r.Run(":" + port)
+	r.Run(os.Getenv("HOSTNAME") + ":" + port)
 }
 
 func getSite(c *gin.Context) {
