@@ -1,5 +1,10 @@
-const publisherName = %s
-const AdServerAPILink = %s
+
+remove script.js
+update html headers
+
+generator:
+const publisherName = "%s"
+const AdServerAPILink = "%s"
 
 fetch(AdServerAPILink+"/"+publisherName)
 .then((res) => {
@@ -45,12 +50,6 @@ function clickHandler(data) {
         })
     })
     .then((res) => {
-        if(!res.ok) {
-            throw new Error("could not get info from click.")
-        }
-        return res.json()
-    })
-    .then((data) => {
         window.open(res.url)
     })
 }
