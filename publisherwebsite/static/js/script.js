@@ -64,7 +64,7 @@ function clickHandler(data) {
     })
     .then(res=>{
         console.log(res)
-        window.location.href = res.url
+        window.open(res.url)
     })
     // .then((res) => {
     //     if(!res.ok) {
