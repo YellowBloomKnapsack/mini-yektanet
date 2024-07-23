@@ -1,8 +1,3 @@
-
-remove script.js
-update html headers
-
-generator:
 const publisherName = "%s"
 const AdServerAPILink = "%s"
 
