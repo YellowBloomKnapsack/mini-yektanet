@@ -104,27 +104,31 @@ func PostImpression(c *gin.Context) {
 
 		url := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("INTERACTION_IMPRESSION_API")
 
-		dataDto := dto.InteractionDto{
-			PublisherUsername: data.PublisherUsername,
-			ClickTime:         time.Now(),
-			AdID:              data.AdID,
-		}
+		go invokeImpressionEvent(data, url, time.Now())
+	}
+}
 
-		jsonData, err := json.Marshal(dataDto)
-		if err != nil {
-			fmt.Printf("failed to marshal InteractionDto to JSON: %v\n", err)
-			return
-		}
+func invokeImpressionEvent(data *tokeninterface.CustomToken, url string, impressionTime time.Time) {
+	dataDto := dto.InteractionDto{
+		PublisherUsername: data.PublisherUsername,
+		ClickTime:         impressionTime,
+		AdID:              data.AdID,
+	}
 
-		resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
-		if err != nil {
-			fmt.Printf("failed to send POST request: %v\n", err)
-			return
-		}
-		defer resp.Body.Close()
+	jsonData, err := json.Marshal(dataDto)
+	if err != nil {
+		fmt.Printf("failed to marshal InteractionDto to JSON: %v\n", err)
+		return
+	}
 
-		if resp.StatusCode != http.StatusCreated {
-			fmt.Printf("failed to fetch ads: status code %d\n", resp.StatusCode)
-		}
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Printf("failed to send POST request: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		fmt.Printf("failed to fetch ads: status code %d\n", resp.StatusCode)
 	}
 }
