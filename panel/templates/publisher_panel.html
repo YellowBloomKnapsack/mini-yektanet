@@ -15,8 +15,13 @@
         <h2>Welcome, {{ .Publisher.Username }}</h2>
 
         <h3>Your Ad Script</h3>
-        <div class="script-box">
-            {{ .Script }}
+        <div class="script-container">
+            <div class="script-box">
+                <pre id="adScript">{{ .Script }}</pre>
+            </div>
+            <div class="button-container">
+                <button onclick="copyToClipboard()">Copy to Clipboard</button>
+            </div>
         </div>
 
         <h3>Account Balance</h3>
@@ -32,25 +37,22 @@
         <div class="chart-container">
             <canvas id="performanceChart"></canvas>
         </div>
-        <!-- <h3>Statistics</h3>
-        <div class="stats">
-            <div class="stat-item">
-                <h4>Impressions</h4>
-                <p>{{ .Impressions }}</p>
-            </div>
-            <div class="stat-item">
-                <h4>Clicks</h4>
-                <p>{{ .Clicks }}</p>
-            </div>
-            <div class="stat-item">
-                <h4>Revenue</h4>
-                <p>{{ .Revenue }}</p>
-            </div>
-        </div> -->
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
+        function copyToClipboard() {
+            const script = document.getElementById('adScript').textContent;
+            navigator.clipboard.writeText(script)
+                .then(() => {
+                    alert('Script copied to clipboard!');
+                })
+                .catch((error) => {
+                    console.error('Failed to copy script:', error);
+                    alert('Failed to copy script. Please try again.');
+                });
+        }
+
         function withdrawBalance() {
             const amount = document.getElementById('withdrawAmount').value;
             if (amount <= 0) {
