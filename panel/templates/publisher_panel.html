@@ -37,6 +37,33 @@
         <div class="chart-container">
             <canvas id="performanceChart"></canvas>
         </div>
+        <div class="transactions-container">
+            <h3>Transactions</h3>
+            <table class="transactions-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Successful</th>
+                        <th>Income</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Transactions }}
+                    <tr>
+                        <td>{{ .ID }}</td>
+                        <td>{{ .Description }}</td>
+                        <td>{{ .Amount }}</td>
+                        <td>{{ if .Successful }}Yes{{ else }}No{{ end }}</td>
+                        <td>{{ if .Income }}Yes{{ else }}No{{ end }}</td>
+                        <td>{{ .Time.Format "2006-01-02 15:04:05" }}</td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 

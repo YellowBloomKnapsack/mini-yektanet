@@ -12,11 +12,14 @@ body {
     padding: 20px;
 }
 
-h1, h2 {
+h1,
+h2 {
     color: #333;
 }
 
-.balance, .create-ad, .ad-list {
+.balance,
+.create-ad,
+.ad-list {
     background: #f4f4f4;
     margin-bottom: 20px;
     padding: 20px;
@@ -28,7 +31,8 @@ form {
     flex-direction: column;
 }
 
-input, button {
+input,
+button {
     margin-bottom: 10px;
     padding: 10px;
 }
@@ -54,4 +58,34 @@ button:hover {
 .ad-item img {
     max-width: 200px;
     height: auto;
+}
+
+.transactions-container {
+    margin-top: 40px;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.transactions-table th,
+.transactions-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.transactions-table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+.transactions-table tr:hover {
+    background-color: #f9f9f9;
+}
+
+.transactions-table td {
+    vertical-align: middle;
 }

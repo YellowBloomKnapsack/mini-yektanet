@@ -10,7 +10,7 @@ type AdsInteraction struct {
 	gorm.Model
 	// Count    int    `gorm:"not null;default:0"` //count at that period of time
 	Type        int `gorm:"not null"`
-	ClickTime   time.Time
+	EventTime   time.Time
 	AdID        uint
 	Ad          Ad
 	PublisherID uint

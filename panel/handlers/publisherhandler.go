@@ -4,9 +4,9 @@ import (
 	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
-	"io/ioutil"
 	"strconv"
 	"time"
 
@@ -17,7 +17,7 @@ func PublisherPanel(c *gin.Context) {
 	username := c.Param("username")
 
 	var publisher models.Publisher
-	result := database.DB.Where("username = ?", username).Preload("AdsInteraction").Preload("AdsInteraction.Ad").First(&publisher)
+	result := database.DB.Where("username = ?", username).Preload("Transactions").Preload("AdsInteraction").Preload("AdsInteraction.Ad").First(&publisher)
 	if result.Error != nil {
 		fmt.Println("Info:", result.Error)
 		publisher = models.Publisher{
@@ -55,9 +55,10 @@ func PublisherPanel(c *gin.Context) {
 	chartData := prepareChartData(publisher.AdsInteraction, yektanetPortion)
 
 	c.HTML(http.StatusOK, "publisher_panel.html", gin.H{
-		"Publisher": publisher,
-		"Script":    script,
-		"ChartData": chartData,
+		"Publisher":    publisher,
+		"Script":       script,
+		"ChartData":    chartData,
+		"Transactions": publisher.Transactions,
 	})
 }
 func WithdrawPublisherBalance(c *gin.Context) {
@@ -81,10 +82,33 @@ func WithdrawPublisherBalance(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid withdrawal amount"})
 		return
 	}
+	tx := database.DB.Begin()
 
-	// amount = min(amount, publisher.Balance)
+	// Create a new transaction record
+	transaction := models.Transaction{
+		CustomerID:   publisher.ID,
+		CustomerType: models.Customer_Publisher,
+		Amount:       amount,
+		Income:       false,
+		Successful:   true,
+		Time:         time.Now(),
+		Description:  "withdraw wallet",
+	}
+	if err := database.DB.Create(&transaction).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create transaction"})
+		return
+	}
+
+	// Update the publisher's balance
 	publisher.Balance -= amount
-	database.DB.Save(&publisher)
+	if err := tx.Save(&publisher).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update publisher balance"})
+		return
+	}
+
+	tx.Commit()
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":    fmt.Sprintf("Withdrawn amount: %d", amount),
@@ -101,7 +125,7 @@ func prepareChartData(interactions []models.AdsInteraction, yektanetPortion int)
 	})
 
 	for _, interaction := range interactions {
-		day := interaction.ClickTime.Truncate(24 * time.Hour)
+		day := interaction.EventTime.Truncate(24 * time.Hour)
 		data := dailyData[day]
 		if interaction.Type == int(models.Impression) {
 			data.Impressions++

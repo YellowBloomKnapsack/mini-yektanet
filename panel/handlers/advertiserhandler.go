@@ -16,16 +16,16 @@ import (
 )
 
 const (
-	INTBASE = 10
-	INTBIT32  = 32
-	INTBIT64  = 64
+	INTBASE  = 10
+	INTBIT32 = 32
+	INTBIT64 = 64
 )
 
 func AdvertiserPanel(c *gin.Context) {
 	advertiserUserName := c.Param("username")
 
 	var advertiser models.Advertiser
-	result := database.DB.Preload("Ads").Where("username = ?", advertiserUserName).First(&advertiser)
+	result := database.DB.Preload("Ads").Preload("Transactions").Where("username = ?", advertiserUserName).First(&advertiser)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			fmt.Println("No advertiser found with username %s, creating a new one.", advertiserUserName)
@@ -47,9 +47,10 @@ func AdvertiserPanel(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "advertiser_panel.html", gin.H{
-		"Balance":  advertiser.Balance,
-		"Ads":      advertiser.Ads,
-		"Username": advertiserUserName,
+		"Balance":      advertiser.Balance,
+		"Ads":          advertiser.Ads,
+		"Username":     advertiserUserName,
+		"Transactions": advertiser.Transactions,
 	})
 }
 
@@ -66,8 +67,48 @@ func AddFunds(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid amount"})
 		return
 	}
+	tx := database.DB.Begin()
 
-	database.DB.Model(&models.Advertiser{}).Where("username = ?", advertiserUserName).Update("balance", gorm.Expr("balance + ?", amount))
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process deposit"})
+		}
+	}()
+
+	// Fetch the advertiser
+	var advertiser models.Advertiser
+	if err := tx.Where("username = ?", advertiserUserName).First(&advertiser).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch advertiser"})
+		return
+	}
+
+	// Update the advertiser's balance
+	advertiser.Balance += amount
+	if err := tx.Save(&advertiser).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update advertiser balance"})
+		return
+	}
+
+	// Create a new transaction record
+	transaction := models.Transaction{
+		CustomerID:   advertiser.ID,
+		CustomerType: models.Customer_Advertiser,
+		Amount:       amount,
+		Income:       false,
+		Successful:   true,
+		Time:         time.Now(),
+		Description:  "charge wallet",
+	}
+	if err := tx.Create(&transaction).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create transaction"})
+		return
+	}
+
+	tx.Commit()
 
 	c.Redirect(http.StatusSeeOther, fmt.Sprintf("/advertiser/%s/panel", advertiserUserName))
 }

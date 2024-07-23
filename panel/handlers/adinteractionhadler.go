@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
@@ -44,7 +45,7 @@ func HandleClickAdInteraction(c *gin.Context) {
 	// Create the interaction
 	interaction := models.AdsInteraction{
 		Type:        int(interactionType),
-		ClickTime:   request.ClickTime,
+		EventTime:   request.ClickTime,
 		AdID:        ad.ID,
 		PublisherID: publisher.ID,
 	}
@@ -80,10 +81,41 @@ func HandleClickAdInteraction(c *gin.Context) {
 		return
 	}
 
+	// Create a new transaction record for advertiser
+	transaction_publisher := models.Transaction{
+		CustomerID:   publisher.ID,
+		CustomerType: models.Customer_Publisher,
+		Amount:       publisherPortion,
+		Income:       true,
+		Successful:   true,
+		Time:         time.Now(),
+		Description:  "click on ad",
+	}
+	if err := tx.Create(&transaction_publisher).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create transaction"})
+		return
+	}
+
 	// Decrease advertiser's balance
 	if err := tx.Model(&ad.Advertiser).Update("balance", gorm.Expr("balance - ?", ad.Bid)).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update advertiser's balance"})
+		return
+	}
+	// Create a new transaction record for advertiser
+	transaction_advertiser := models.Transaction{
+		CustomerID:   ad.ID,
+		CustomerType: models.Customer_Advertiser,
+		Amount:       ad.Bid,
+		Income:       false,
+		Successful:   true,
+		Time:         time.Now(),
+		Description:  "click on ad",
+	}
+	if err := tx.Create(&transaction_advertiser).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create transaction"})
 		return
 	}
 
@@ -122,7 +154,7 @@ func HandleImpressionAdInteraction(c *gin.Context) {
 	// Create the interaction
 	interaction := models.AdsInteraction{
 		Type:        int(interactionType),
-		ClickTime:   request.ClickTime,
+		EventTime:   request.ClickTime,
 		AdID:        ad.ID,
 		PublisherID: publisher.ID,
 	}
