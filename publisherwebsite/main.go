@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/gin-contrib/cors"
 )
 
 var currentSiteNames []string
@@ -25,6 +26,9 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowAllOrigins: true,
+	}))
 	r.GET("/:siteName", getSite)
 	r.LoadHTMLGlob("html/*")
 	r.Static("/static", "./static")

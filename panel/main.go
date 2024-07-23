@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/gin-contrib/cors"
 )
 
 func main() {
@@ -19,7 +20,9 @@ func main() {
 	database.InitDB()
 
 	r := gin.Default()
-
+	r.Use(cors.New(cors.Config{
+		AllowAllOrigins: true,
+	}))
 	r.LoadHTMLGlob("templates/*")
 	r.Static("/static", "./static")
 

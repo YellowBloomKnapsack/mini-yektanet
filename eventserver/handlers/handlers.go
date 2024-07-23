@@ -69,7 +69,8 @@ func PostClick(c *gin.Context) {
 		}
 	}
 
-	c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
+	// c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
+	c.JSON(http.StatusOK, gin.H{"link":data.RedirectPath})
 }
 
 func PostImpression(c *gin.Context) {

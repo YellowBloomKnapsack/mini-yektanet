@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"os"
 	"net/http"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
@@ -24,7 +25,7 @@ func GetActiveAds(c *gin.Context) {
 		adDTO := dto.AdDTO{
 			ID:        ad.ID,
 			Text:      ad.Text,
-			ImagePath: ad.ImagePath,
+			ImagePath: "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + ad.ImagePath,
 			Bid:       ad.Bid,
 			Website:   ad.Website,
 		}
