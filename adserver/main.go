@@ -25,11 +25,10 @@ func main() {
 		AllowAllOrigins: true,
 	}))
 	r.GET("/:publisherUsername", handlers.GetAd)
-	// r.Static("/static", "../publisherwebsite/static")
 
 	port := os.Getenv("AD_SERVER_PORT")
 	if port == "" {
 		port = "8081"
 	}
-	r.Run(":" + port)
+	r.Run(os.Getenv("HOSTNAME") + ":" + port)
 }
