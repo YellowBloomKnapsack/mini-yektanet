@@ -137,3 +137,33 @@ button:hover {
     max-width: 800px;
     margin: 20px auto;
 }
+
+.transactions-container {
+    margin-top: 40px;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.transactions-table th,
+.transactions-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.transactions-table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+.transactions-table tr:hover {
+    background-color: #f9f9f9;
+}
+
+.transactions-table td {
+    vertical-align: middle;
+}

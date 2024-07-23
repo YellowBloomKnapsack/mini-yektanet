@@ -8,9 +8,10 @@ import (
 
 type AdsInteraction struct {
 	gorm.Model
-	// Count    int    `gorm:"not null;default:0"` //count at that period of time
+	// Count    int   `gorm:"not null;default:0"` //count at that period of time
 	Type        int `gorm:"not null"`
-	ClickTime   time.Time
+	EventTime   time.Time
+	Bid         int64 `gorm:"not null"`
 	AdID        uint
 	Ad          Ad
 	PublisherID uint

@@ -1,47 +1,47 @@
 package eventschannel
 
 import (
-	"fmt"
-	"os"
-	"time"
-	"strconv"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
+	"strconv"
+	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
 
 type ClickEvent struct {
-	Data dto.CustomToken
+	Data      dto.CustomToken
 	ClickTime time.Time
 }
 
 type ImpressionEvent struct {
-	Data dto.CustomToken
+	Data           dto.CustomToken
 	ImpressionTime time.Time
 }
 
 var (
 	clickEvents      chan ClickEvent
-	impressionEvents chan ImpressionEvent 
+	impressionEvents chan ImpressionEvent
 	clickApiUrl      string
 	impressionApiUrl string
 )
 
 func initialize() {
-	baseUrl := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") 
+	baseUrl := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT")
 	clickBuffSize, _ := strconv.Atoi(os.Getenv("CLICK_BUFF_SIZE"))
 	impressionBuffSize, _ := strconv.Atoi(os.Getenv("IMPRESSION_BUFF_SIZE"))
 
-	clickEvents      = make(chan ClickEvent, clickBuffSize)
+	clickEvents = make(chan ClickEvent, clickBuffSize)
 	impressionEvents = make(chan ImpressionEvent, impressionBuffSize)
-	clickApiUrl      = baseUrl + os.Getenv("INTERACTION_CLICK_API")
+	clickApiUrl = baseUrl + os.Getenv("INTERACTION_CLICK_API")
 	impressionApiUrl = baseUrl + os.Getenv("INTERACTION_IMPRESSION_API")
 }
 
 func Start() {
-    initialize()
+	initialize()
 	go func() {
 		for {
 			select {
@@ -56,7 +56,7 @@ func Start() {
 
 func InvokeClickEvent(data *dto.CustomToken, clickTime time.Time) {
 	event := ClickEvent{
-		Data: *data,
+		Data:      *data,
 		ClickTime: clickTime,
 	}
 
@@ -65,7 +65,7 @@ func InvokeClickEvent(data *dto.CustomToken, clickTime time.Time) {
 
 func InvokeImpressionEvent(data *dto.CustomToken, impressionTime time.Time) {
 	event := ImpressionEvent{
-		Data: *data,
+		Data:           *data,
 		ImpressionTime: impressionTime,
 	}
 
@@ -75,7 +75,7 @@ func InvokeImpressionEvent(data *dto.CustomToken, impressionTime time.Time) {
 func callClickApi(event ClickEvent) {
 	dataDto := dto.InteractionDto{
 		PublisherUsername: event.Data.PublisherUsername,
-		ClickTime:         event.ClickTime,
+		EventTime:         event.ClickTime,
 		AdID:              event.Data.AdID,
 	}
 
@@ -102,7 +102,7 @@ func callClickApi(event ClickEvent) {
 func callImpressionApi(event ImpressionEvent) {
 	dataDto := dto.InteractionDto{
 		PublisherUsername: event.Data.PublisherUsername,
-		ClickTime:         event.ImpressionTime,
+		EventTime:         event.ImpressionTime,
 		AdID:              event.Data.AdID,
 	}
 

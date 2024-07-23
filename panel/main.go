@@ -7,9 +7,9 @@ import (
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/panel/handlers"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/gin-contrib/cors"
 )
 
 func main() {
@@ -33,6 +33,8 @@ func main() {
 		advertiser.POST("/:username/create-ad", handlers.CreateAd)
 		advertiser.POST("/:username/toggle-ad", handlers.ToggleAd)
 		advertiser.GET("/:username/ad-report/:id", handlers.AdReport)
+		advertiser.POST("/:username/edit-ad", handlers.HandleEditAd)
+
 	}
 
 	publisher := r.Group("/publisher")
