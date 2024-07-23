@@ -131,7 +131,7 @@ func prepareChartData(interactions []models.AdsInteraction, yektanetPortion int)
 			data.Impressions++
 		} else if interaction.Type == int(models.Click) {
 			data.Clicks++
-			data.Revenue += interaction.Ad.Bid * int64(100-yektanetPortion) / 100
+			data.Revenue += interaction.Bid * int64(100-yektanetPortion) / 100
 		}
 		dailyData[day] = data
 	}

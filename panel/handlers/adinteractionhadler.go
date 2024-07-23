@@ -47,6 +47,7 @@ func HandleClickAdInteraction(c *gin.Context) {
 		Type:        int(interactionType),
 		EventTime:   request.EventTime,
 		AdID:        ad.ID,
+		Bid: ad.Bid,
 		PublisherID: publisher.ID,
 	}
 
@@ -105,7 +106,7 @@ func HandleClickAdInteraction(c *gin.Context) {
 	}
 	// Create a new transaction record for advertiser
 	transaction_advertiser := models.Transaction{
-		CustomerID:   ad.ID,
+		CustomerID:   ad.AdvertiserID,
 		CustomerType: models.Customer_Advertiser,
 		Amount:       ad.Bid,
 		Income:       false,
@@ -157,6 +158,7 @@ func HandleImpressionAdInteraction(c *gin.Context) {
 		EventTime:   request.EventTime,
 		AdID:        ad.ID,
 		PublisherID: publisher.ID,
+		Bid: ad.Bid,
 	}
 
 	if err := database.DB.Create(&interaction).Error; err != nil {

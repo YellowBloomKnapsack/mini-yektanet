@@ -70,14 +70,37 @@
     <script>
         function copyToClipboard() {
             const script = document.getElementById('adScript').textContent;
-            navigator.clipboard.writeText(script)
-                .then(() => {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(script)
+                    .then(() => {
+                        alert('Script copied to clipboard!');
+                    })
+                    .catch((error) => {
+                        console.error('Failed to copy script:', error);
+                        alert('Failed to copy script. Please try again.');
+                    });
+            } else {
+                // Use the 'out of viewport hidden text area' trick
+                const textArea = document.createElement("textarea");
+                textArea.value = script;
+
+                // Move textarea out of the viewport so it's not visible
+                textArea.style.position = "absolute";
+                textArea.style.left = "-999999px";
+
+                document.body.prepend(textArea);
+                textArea.select();
+
+                try {
+                    document.execCommand('copy');
                     alert('Script copied to clipboard!');
-                })
-                .catch((error) => {
-                    console.error('Failed to copy script:', error);
-                    alert('Failed to copy script. Please try again.');
-                });
+                } catch (error) {
+                    console.error(error);
+                } finally {
+                    textArea.remove();
+                }
+            }
+
         }
 
         function withdrawBalance() {

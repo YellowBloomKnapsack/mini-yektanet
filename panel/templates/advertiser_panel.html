@@ -55,6 +55,7 @@
                 </tbody>
             </table>
         </div>
+
         <div class="ad-list">
             <h2>Your Ads</h2>
             {{ range .Ads }}
@@ -62,16 +63,37 @@
                 <h3>{{ .Text }}</h3>
                 <img src="{{ .ImagePath }}" alt="Ad Image">
                 <p>Bid: ${{ .Bid }}</p>
+                <p>Website: {{ .Website }}</p>
                 <p>Status: {{ if .Active }}Active{{ else }}Inactive{{ end }}</p>
                 <form action="/advertiser/{{ $.Username }}/toggle-ad" method="POST">
                     <input type="hidden" name="ad_id" value="{{ .ID }}">
                     <button type="submit">{{ if .Active }}Deactivate{{ else }}Activate{{ end }}</button>
                 </form>
                 <a href="/advertiser/{{ $.Username }}/ad-report/{{ .ID }}">View Report</a>
+                <button onclick="showEditForm({{ .ID }})">Edit Ad</button>
+
+                <div id="editForm{{ .ID }}" style="display: none;">
+                    <h4>Edit Ad</h4>
+                    <form action="/advertiser/{{ $.Username }}/edit-ad" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="ad_id" value="{{ .ID }}">
+                        <input type="text" name="text" value="{{ .Text }}" required>
+                        <input type="url" name="website" value="{{ .Website }}" required>
+                        <input type="number" name="bid" value="{{ .Bid }}" required>
+                        <input type="file" name="image" accept="image/*">
+                        <button type="submit">Update Ad</button>
+                    </form>
+                </div>
             </div>
             {{ end }}
         </div>
+
     </div>
+    <script>
+        function showEditForm(adId) {
+            var form = document.getElementById('editForm' + adId);
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
 </body>
 
 </html>
