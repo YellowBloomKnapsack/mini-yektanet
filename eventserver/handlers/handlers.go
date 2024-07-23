@@ -64,7 +64,7 @@ func PostImpression(c *gin.Context) {
 
 	_, present := impressionTokens[token]
 	if !present {
-		clickTokens[token] = true
+		impressionTokens[token] = true
 		eventschannel.InvokeImpressionEvent(data, time.Now())
 	}
 }
