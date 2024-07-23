@@ -62,15 +62,15 @@ function clickHandler(data) {
             token: data["click_token"]
         })
     })
-    .then((res) => {
-        if(!res.ok) {
-            throw new Error("could not get info from click.")
-        }
-        return res.json()
-    })
-    .then((data) => {
-        window.location.href = data.link
-    })
+    // .then((res) => {
+    //     if(!res.ok) {
+    //         throw new Error("could not get info from click.")
+    //     }
+    //     return res.json()
+    // })
+    // .then((data) => {
+    //     window.location.href = data.link
+    // })
 }
 
 const isElementInViewport = (el, partiallyVisible = true) => {

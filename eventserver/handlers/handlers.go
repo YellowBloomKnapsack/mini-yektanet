@@ -53,7 +53,6 @@ func PostClick(c *gin.Context) {
 		go invokeClickEvent(data, url, time.Now())
 	}
 
-	// c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
 }
 
 func invokeClickEvent(data *tokeninterface.CustomToken, url string, clickTime time.Time) {
@@ -79,6 +78,8 @@ func invokeClickEvent(data *tokeninterface.CustomToken, url string, clickTime ti
 	if resp.StatusCode != http.StatusCreated {
 		fmt.Printf("failed to fetch ads: status code %d\n", resp.StatusCode)
 	}
+
+  c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
 }
 
 func PostImpression(c *gin.Context) {
