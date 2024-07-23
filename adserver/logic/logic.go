@@ -33,7 +33,7 @@ func NewLogicService() LogicInterface {
 }
 
 func (ls *LogicService) isBetterThan(lhs, rhs *dto.AdDTO) bool {
-	return rhs.Bid > lhs.Bid
+	return (rhs.TotalCost / int64(rhs.Impressions)) > (lhs.TotalCost / int64(lhs.Impressions))
 }
 
 func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {

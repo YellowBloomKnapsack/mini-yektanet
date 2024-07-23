@@ -57,9 +57,9 @@ func TestLogicService_GetBestAd_WithAds(t *testing.T) {
 	ls, _ := service.(*LogicService)
 
 	ads := []*dto.AdDTO{
-		{ID: 1, Text: "Ad 1", Bid: 100},
-		{ID: 2, Text: "Ad 2", Bid: 200},
-		{ID: 3, Text: "Ad 3", Bid: 150},
+		{ID: 1, Text: "Ad 1", Bid: 200, Impressions: 10, TotalCost: 50},
+		{ID: 2, Text: "Ad 2", Bid: 100, Impressions: 10, TotalCost: 100},
+		{ID: 3, Text: "Ad 3", Bid: 150, Impressions: 50, TotalCost: 200},
 	}
 
 	ls.adsList = ads
@@ -68,15 +68,15 @@ func TestLogicService_GetBestAd_WithAds(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, bestAd)
 	assert.Equal(t, uint(2), bestAd.ID)
-	assert.Equal(t, int64(200), bestAd.Bid)
+	assert.Equal(t, int64(100), bestAd.Bid)
 }
 
 func TestLogicService_UpdateAdsList(t *testing.T) {
 	setupEnv()
 
 	ads := []dto.AdDTO{
-		{ID: 1, Text: "Ad 1", Bid: 100},
-		{ID: 2, Text: "Ad 2", Bid: 200},
+		{ID: 1, Text: "Ad 1", Bid: 100, Impressions: 20, TotalCost: 10},
+		{ID: 2, Text: "Ad 2", Bid: 200, Impressions: 10, TotalCost: 20},
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
