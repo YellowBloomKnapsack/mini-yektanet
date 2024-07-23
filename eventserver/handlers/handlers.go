@@ -1,16 +1,13 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/base64"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"time"
 
-	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/tokeninterface"
+	"YellowBloomKnapsack/mini-yektanet/eventserver/eventschannel"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,8 +18,6 @@ var impressionTokens = make(map[string]bool)
 type TokenRequest struct {
 	Token string `json:"token"`
 }
-
-//func invokeClickEvent()
 
 func PostClick(c *gin.Context) {
 	privateKey := os.Getenv("PRIVATE_KEY")
@@ -41,45 +36,13 @@ func PostClick(c *gin.Context) {
 		return
 	}
 
-	//c.JSON(http.StatusOK, gin.H{"link": data.RedirectPath})
-	c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
-
 	_, present := clickTokens[token]
 	if !present {
 		clickTokens[token] = true
-
-		url := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("INTERACTION_CLICK_API")
-
-		go invokeClickEvent(data, url, time.Now())
+		eventschannel.InvokeClickEvent(data, time.Now())
 	}
 
-}
-
-func invokeClickEvent(data *tokeninterface.CustomToken, url string, clickTime time.Time) {
-	dataDto := dto.InteractionDto{
-		PublisherUsername: data.PublisherUsername,
-		ClickTime:         clickTime,
-		AdID:              data.AdID,
-	}
-
-	jsonData, err := json.Marshal(dataDto)
-	if err != nil {
-		fmt.Printf("failed to marshal InteractionDto to JSON: %v\n", err)
-		return
-	}
-
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		fmt.Printf("failed to send POST request: %v\n", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusCreated {
-		fmt.Printf("failed to fetch ads: status code %d\n", resp.StatusCode)
-	}
-
-  c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
+	c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
 }
 
 func PostImpression(c *gin.Context) {
@@ -102,34 +65,6 @@ func PostImpression(c *gin.Context) {
 	_, present := impressionTokens[token]
 	if !present {
 		clickTokens[token] = true
-
-		url := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("INTERACTION_IMPRESSION_API")
-
-		go invokeImpressionEvent(data, url, time.Now())
-	}
-}
-
-func invokeImpressionEvent(data *tokeninterface.CustomToken, url string, impressionTime time.Time) {
-	dataDto := dto.InteractionDto{
-		PublisherUsername: data.PublisherUsername,
-		ClickTime:         impressionTime,
-		AdID:              data.AdID,
-	}
-
-	jsonData, err := json.Marshal(dataDto)
-	if err != nil {
-		fmt.Printf("failed to marshal InteractionDto to JSON: %v\n", err)
-		return
-	}
-
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		fmt.Printf("failed to send POST request: %v\n", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusCreated {
-		fmt.Printf("failed to fetch ads: status code %d\n", resp.StatusCode)
+		eventschannel.InvokeImpressionEvent(data, time.Now())
 	}
 }
