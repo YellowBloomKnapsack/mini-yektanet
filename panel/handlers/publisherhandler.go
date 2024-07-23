@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"io/ioutil"
 	"strconv"
 	"time"
 
@@ -33,9 +34,13 @@ func PublisherPanel(c *gin.Context) {
 		// return
 	}
 
-	script := fmt.Sprintf("<script src='%s:%s/js/script.js'></script>",
-		os.Getenv("HOSTNAME"),
-		os.Getenv("PUBLISHER_WEBSITE_PORT"))
+	script := fmt.Sprintf("<script> %s </script>",
+		generateScript(username))
+	fmt.Println(script)
+
+	// script := fmt.Sprintf("<script src='%s:%s/js/script.js'></script>",
+	// 	os.Getenv("HOSTNAME"),
+	// 	os.Getenv("PUBLISHER_WEBSITE_PORT"))
 
 	yektanetPortionString := os.Getenv("YEKTANET_PORTION")
 
@@ -127,4 +132,13 @@ func prepareChartData(interactions []models.AdsInteraction, yektanetPortion int)
 		"Clicks":      clicks,
 		"Revenues":    revenues,
 	}
+}
+
+func generateScript(publisherName string) string {
+	content, err := ioutil.ReadFile(os.Getenv("SCRIPT_TEMPLATE_LOCATION"))
+	if err != nil {
+		return "error generating the script"
+	}
+	adServerAPILink := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("AD_SERVER_PORT")
+	return fmt.Sprintf(string(content), publisherName, adServerAPILink)
 }
