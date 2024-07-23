@@ -37,8 +37,17 @@ func PublisherPanel(c *gin.Context) {
 		os.Getenv("HOSTNAME"),
 		os.Getenv("PUBLISHER_WEBSITE_PORT"))
 
+	yektanetPortionString := os.Getenv("YEKTANET_PORTION")
+
+	// Convert the value to an integer
+	yektanetPortion, err := strconv.Atoi(yektanetPortionString)
+	if err != nil || yektanetPortion < 0 || yektanetPortion > 100 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error parsing YEKTANET_PORTION environment variable: %v\n", err)})
+		return
+	}
+
 	// Prepare data for the chart
-	chartData := prepareChartData(publisher.AdsInteraction)
+	chartData := prepareChartData(publisher.AdsInteraction, yektanetPortion)
 
 	c.HTML(http.StatusOK, "publisher_panel.html", gin.H{
 		"Publisher": publisher,
@@ -78,7 +87,7 @@ func WithdrawPublisherBalance(c *gin.Context) {
 	})
 }
 
-func prepareChartData(interactions []models.AdsInteraction) map[string]interface{} {
+func prepareChartData(interactions []models.AdsInteraction, yektanetPortion int) map[string]interface{} {
 	// Group interactions by day
 	dailyData := make(map[time.Time]struct {
 		Impressions int
@@ -95,6 +104,7 @@ func prepareChartData(interactions []models.AdsInteraction) map[string]interface
 			data.Clicks++
 			data.Revenue += interaction.Ad.Bid
 		}
+		data.Revenue = data.Revenue * int64(100-yektanetPortion) / 100
 		dailyData[day] = data
 	}
 

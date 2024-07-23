@@ -66,7 +66,7 @@ func HandleClickAdInteraction(c *gin.Context) {
 
 	// Convert the value to an integer
 	yektanetPortion, err := strconv.Atoi(yektanetPortionString)
-	if err != nil {
+	if err != nil || yektanetPortion < 0 || yektanetPortion > 100 {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error parsing YEKTANET_PORTION environment variable: %v\n", err)})
 		return
