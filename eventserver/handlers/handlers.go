@@ -41,7 +41,8 @@ func PostClick(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"link": data.RedirectPath})
+	//c.JSON(http.StatusOK, gin.H{"link": data.RedirectPath})
+	c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
 
 	_, present := clickTokens[token]
 	if !present {
