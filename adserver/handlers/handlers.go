@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"encoding/base64"
 	"net/http"
 	"os"
@@ -9,12 +8,25 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
-	"YellowBloomKnapsack/mini-yektanet/common/tokeninterface"
+	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
 
-func GetAd(c *gin.Context) {
-	chosenAd, err := logic.GetBestAd()
+type AdServerHandler struct {
+	logicService logic.LogicInterface
+	tokenHandler tokenhandler.TokenHandlerInterface
+}
+
+func NewAdServerHandler(logicService logic.LogicInterface, tokenHandler tokenhandler.TokenHandlerInterface) *AdServerHandler {
+	logicService.StartTicker()
+	return &AdServerHandler{
+		logicService: logicService,
+		tokenHandler: tokenHandler,
+	}
+}
+
+func (h *AdServerHandler) GetAd(c *gin.Context) {
+	chosenAd, err := h.logicService.GetBestAd()
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{})
 		return
@@ -32,11 +44,8 @@ func GetAd(c *gin.Context) {
 	privateKey := os.Getenv("PRIVATE_KEY")
 	key, _ := base64.StdEncoding.DecodeString(privateKey)
 
-	clickToken, _ := tokeninterface.GenerateToken(dto.ClickType, chosenAd.ID, publisherUsername, chosenAd.Website, key)
-	impressionToken, _ := tokeninterface.GenerateToken(dto.ImpressionType, chosenAd.ID, publisherUsername, chosenAd.Website, key)
-
-	fmt.Println(clickToken)
-	fmt.Println(impressionToken)
+	clickToken, _ := h.tokenHandler.GenerateToken(dto.ClickType, chosenAd.ID, publisherUsername, chosenAd.Website, key)
+	impressionToken, _ := h.tokenHandler.GenerateToken(dto.ImpressionType, chosenAd.ID, publisherUsername, chosenAd.Website, key)
 
 	c.JSON(http.StatusOK, gin.H{
 		"image_link":       chosenAd.ImagePath,
