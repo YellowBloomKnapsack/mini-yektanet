@@ -1,5 +1,5 @@
-const publisherName = %s
-const AdServerAPILink = %s
+const publisherName = "%s"
+const AdServerAPILink = "%s"
 
 fetch(AdServerAPILink+"/"+publisherName)
 .then((res) => {
@@ -45,13 +45,7 @@ function clickHandler(data) {
         })
     })
     .then((res) => {
-        if(!res.ok) {
-            throw new Error("could not get info from click.")
-        }
-        return res.json()
-    })
-    .then((data) => {
-        window.location.href = data.link
+        window.open(res.url)
     })
 }
 
