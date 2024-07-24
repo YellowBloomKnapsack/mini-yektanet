@@ -27,7 +27,9 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins: true,
 	}))
+
 	r.GET("/:publisherUsername", handler.GetAd)
+	r.POST("/brake/:adId", handler.BrakeAd)
 
 	port := os.Getenv("AD_SERVER_PORT")
 	if port == "" {
