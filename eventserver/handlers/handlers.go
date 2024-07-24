@@ -4,7 +4,6 @@ import (
 	"os"
 	"time"
 	"context"
-	"fmt"
 	"log"
 	"strconv"
 
@@ -67,7 +66,6 @@ func (h *EventServerHandler) PostClick(c *gin.Context) {
 	present := h.isTokenPresent(token, true)
 	if !present {
 		h.addToken(token, true)
-		fmt.Println("HEREEEEEEEEEEEEEEE")
 		h.workerService.InvokeClickEvent(data, time.Now())
 	}
 
