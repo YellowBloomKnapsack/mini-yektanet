@@ -24,7 +24,7 @@ const host string = "localhost:8090"
 func TestGetActiveAdsErrorNoDB(t *testing.T) {
 	setEnvVariables()
 	
-	database.InitDB() // init the database (so database.DB - being used in adHandler - is not nil)
+	database.InitTestDB() // init the database (so database.DB - being used in adHandler - is not nil)
 	db, _ := database.DB.DB()
 	db.Close() // close database connection for the sake of testing	
 
@@ -46,7 +46,7 @@ func TestGetActiveAdsErrorNoDB(t *testing.T) {
 func TestGetActiveAdsSuccessGetAllAds(t *testing.T) {
 	setEnvVariables()
 
-	database.InitDB()
+	database.InitTestDB()
 
 	r := gin.Default()	
 	r.GET("/", GetActiveAds)

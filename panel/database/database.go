@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -56,6 +57,39 @@ func InitDB() {
 	DB.AutoMigrate(&models.Advertiser{})
 	DB.AutoMigrate(&models.Transaction{})
 	err = initPublishers()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func InitTestDB() {
+	dbPath := os.Getenv("TEST_DB_PATH")
+	if dbPath == "" {
+		dbPath = "test.db"
+	}
+
+	if _, err := os.Stat(dbPath); err == nil {
+		os.Remove(dbPath)
+	}
+	// Create the SQLite database file if it doesn't exist
+	_, err := os.Stat(dbPath)
+	if os.IsNotExist(err) {
+		_, err = os.Create(dbPath)
+		if err != nil {
+			log.Fatal("Failed to create test database file:", err)
+		}
+	}
+
+	DB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Failed to connect to test database:", err)
+	}
+
+	DB.AutoMigrate(&models.Publisher{})
+	DB.AutoMigrate(&models.Ad{})
+	DB.AutoMigrate(&models.AdsInteraction{})
+	DB.AutoMigrate(&models.Advertiser{})
+	DB.AutoMigrate(&models.Transaction{})
 	if err != nil {
 		log.Fatal(err)
 	}
