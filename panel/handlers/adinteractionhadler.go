@@ -10,6 +10,7 @@ import (
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
+	"YellowBloomKnapsack/mini-yektanet/panel/logic"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -97,10 +98,12 @@ func HandleClickAdInteraction(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create transaction"})
 		return
 	}
-	sum, _ := getSumOfBids(database.DB, ad.ID)
+
+	sum, _ := logic.GetSumOfBids(database.DB, ad.ID)
 	if sum > ad.Advertiser.Balance {
 		go NotifyAdsBrake(ad.ID)
 	}
+
 	// Decrease advertiser's balance
 	if err := tx.Model(&ad.Advertiser).Update("balance", gorm.Expr("balance - ?", ad.Bid)).Error; err != nil {
 		tx.Rollback()

@@ -36,8 +36,7 @@ func NewLogicService() LogicInterface {
 }
 
 func (ls *LogicService) isBetterThan(lhs, rhs *dto.AdDTO) bool {
-
-	return (rhs.TotalCost / int64(rhs.Impressions+1)) > (lhs.TotalCost / int64(lhs.Impressions+1))
+	return rhs.Score > lhs.Score
 }
 
 func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
@@ -45,20 +44,23 @@ func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
 		return nil, fmt.Errorf("no ad was found")
 	}
 
-	i := 0
-	for i = 0; i < len(ls.adsList); i++ {
-		_, ok := ls.brakedAdIds[ls.adsList[i].ID]
+	index := 0
+	for index = 0; index < len(ls.adsList); index++ {
+		_, ok := ls.brakedAdIds[ls.adsList[index].ID]
 		if !ok {
 			break
 		}
 	}
 
-	bestAd := ls.adsList[i]
+	if index == len(ls.adsList) {
+		return nil, fmt.Errorf("no ad was found")
+	}
+	bestAd := ls.adsList[index]
 	anyValidMap := false
 
-	for _, ad := range ls.adsList {
+	for i := index; i < len(ls.adsList); i++ {
+		ad := ls.adsList[i]
 		_, ok := ls.brakedAdIds[ad.ID]
-		fmt.Println(ls.brakedAdIds, ad.ID)
 		if ok {
 			continue
 		}

@@ -9,4 +9,5 @@ type AdDTO struct {
 	TotalCost         int64
 	Impressions       int
 	BalanceAdvertiser int64
+	Score             float64
 }

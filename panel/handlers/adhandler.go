@@ -1,21 +1,19 @@
 package handlers
 
 import (
-	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
+	"YellowBloomKnapsack/mini-yektanet/panel/logic"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetActiveAds(c *gin.Context) {
-
 	var ads []models.Ad
 	result := database.DB.Preload("Advertiser").Preload("AdsInteractions").Where("active = ?", true).Find(&ads)
 	if result.Error != nil {
@@ -24,7 +22,9 @@ func GetActiveAds(c *gin.Context) {
 	}
 
 	var adDTOs []dto.AdDTO
+	var impressionsCount int64
 	for _, ad := range ads {
+		_ = database.DB.Model(&models.AdsInteraction{}).Where("ad_id = ? AND type = ?", ad.ID, models.Impression).Count(&impressionsCount)
 		adDTO := dto.AdDTO{
 			ID:                ad.ID,
 			Text:              ad.Text,
@@ -33,15 +33,8 @@ func GetActiveAds(c *gin.Context) {
 			Website:           ad.Website,
 			TotalCost:         ad.TotalCost,
 			BalanceAdvertiser: ad.Advertiser.Balance,
-			Impressions: func() int {
-				count := 0
-				for _, interaction := range ad.AdsInteractions {
-					if interaction.Type == int(models.Impression) {
-						count++
-					}
-				}
-				return count
-			}(),
+			Impressions:       int(impressionsCount),
+			Score:             logic.GetScore(ad, int(impressionsCount)),
 		}
 		adDTOs = append(adDTOs, adDTO)
 	}
@@ -60,24 +53,4 @@ func NotifyAdsBrake(adId uint) {
 	}
 
 	defer resp.Body.Close()
-}
-
-func getSumOfBids(db *gorm.DB, adID uint) (int64, error) {
-	var sum int64
-	eventType := 1
-	now := time.Now()
-	startTime := now.Add(+(210 * time.Minute))
-	endTime := now.Add(-15*time.Second + 210*time.Minute)
-
-	// GORM query to sum bids
-	err := db.Model(&models.AdsInteraction{}).
-		Where("ad_id = ? AND type = ? AND event_time BETWEEN ? AND ?", adID, eventType, endTime, startTime).
-		Select("SUM(bid)").
-		Scan(&sum).Error
-
-	if err != nil {
-		return 0, err
-	}
-
-	return sum, nil
 }
