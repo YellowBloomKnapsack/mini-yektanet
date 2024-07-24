@@ -6,20 +6,34 @@ import (
 	"os"
 	"time"
 
-	"YellowBloomKnapsack/mini-yektanet/common/tokeninterface"
-	"YellowBloomKnapsack/mini-yektanet/eventserver/eventschannel"
+	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
+	"YellowBloomKnapsack/mini-yektanet/eventserver/worker"
 
 	"github.com/gin-gonic/gin"
 )
 
-var clickTokens = make(map[string]bool)
-var impressionTokens = make(map[string]bool)
+type EventServerHandler struct {
+	clickTokens map[string]bool
+	impressionTokens map[string]bool
+	tokenHandler tokenhandler.TokenHandlerInterface
+	workerService worker.WorkerInterface
+}
+
+func NewEventServerHandler(tokenHandler tokenhandler.TokenHandlerInterface, workerService worker.WorkerInterface) *EventServerHandler {
+	workerService.Start()
+	return &EventServerHandler{
+		clickTokens:      make(map[string]bool),
+		impressionTokens: make(map[string]bool),
+		tokenHandler:     tokenHandler,
+		workerService:    workerService,
+	}
+}
 
 type TokenRequest struct {
 	Token string `json:"token"`
 }
 
-func PostClick(c *gin.Context) {
+func (h *EventServerHandler) PostClick(c *gin.Context) {
 	privateKey := os.Getenv("PRIVATE_KEY")
 	key, _ := base64.StdEncoding.DecodeString(privateKey)
 
@@ -30,22 +44,22 @@ func PostClick(c *gin.Context) {
 	}
 
 	token := req.Token
-	data, err := tokeninterface.VerifyToken(token, key)
+	data, err := h.tokenHandler.VerifyToken(token, key)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
 	}
 
-	_, present := clickTokens[token]
+	_, present := h.clickTokens[token]
 	if !present {
-		clickTokens[token] = true
-		eventschannel.InvokeClickEvent(data, time.Now())
+		h.clickTokens[token] = true
+		h.workerService.InvokeClickEvent(data, time.Now())
 	}
 
 	c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
 }
 
-func PostImpression(c *gin.Context) {
+func (h *EventServerHandler) PostImpression(c *gin.Context) {
 	privateKey := os.Getenv("PRIVATE_KEY")
 	key, _ := base64.StdEncoding.DecodeString(privateKey)
 
@@ -56,15 +70,15 @@ func PostImpression(c *gin.Context) {
 	}
 
 	token := req.Token
-	data, err := tokeninterface.VerifyToken(token, key)
+	data, err := h.tokenHandler.VerifyToken(token, key)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
 	}
 
-	_, present := impressionTokens[token]
+	_, present := h.impressionTokens[token]
 	if !present {
-		impressionTokens[token] = true
-		eventschannel.InvokeImpressionEvent(data, time.Now())
+		h.impressionTokens[token] = true
+		h.workerService.InvokeImpressionEvent(data, time.Now())
 	}
 }
