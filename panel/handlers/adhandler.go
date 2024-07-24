@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"os"
 	"net/http"
+	"os"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
@@ -14,7 +14,7 @@ import (
 func GetActiveAds(c *gin.Context) {
 
 	var ads []models.Ad
-	result := database.DB.Where("active = ?", true).Find(&ads)
+	result := database.DB.Preload("Advertiser").Preload("AdsInteractions").Where("active = ?", true).Find(&ads)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch ads"})
 		return
@@ -23,11 +23,22 @@ func GetActiveAds(c *gin.Context) {
 	var adDTOs []dto.AdDTO
 	for _, ad := range ads {
 		adDTO := dto.AdDTO{
-			ID:        ad.ID,
-			Text:      ad.Text,
-			ImagePath: "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + ad.ImagePath,
-			Bid:       ad.Bid,
-			Website:   ad.Website,
+			ID:                ad.ID,
+			Text:              ad.Text,
+			ImagePath:         "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + ad.ImagePath,
+			Bid:               ad.Bid,
+			Website:           ad.Website,
+			TotalCost:         ad.TotalCost,
+			BalanceAdvertiser: ad.Advertiser.Balance,
+			Impressions: func() int {
+				count := 0
+				for _, interaction := range ad.AdsInteractions {
+					if interaction.Type == int(models.Impression) {
+						count++
+					}
+				}
+				return count
+			}(),
 		}
 		adDTOs = append(adDTOs, adDTO)
 	}
