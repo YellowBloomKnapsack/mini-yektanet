@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"gorm.io/gorm"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
@@ -46,12 +49,35 @@ func GetActiveAds(c *gin.Context) {
 	c.JSON(http.StatusOK, adDTOs)
 
 }
-func NotifyAdsUpdate() {
-	notifyApiPath := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("AD_SERVER_PORT") + os.Getenv("NOTIFY_API_PATH")
+
+func NotifyAdsBrake(adId uint) {
+	adIdStr := strconv.FormatUint(uint64(adId), 10)
+
+	notifyApiPath := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("AD_SERVER_PORT") + os.Getenv("NOTIFY_API_PATH") + "/" + adIdStr
 	resp, err := http.Post(notifyApiPath, "", nil)
 	if err != nil {
 		return
 	}
 
 	defer resp.Body.Close()
+}
+
+func getSumOfBids(db *gorm.DB, adID uint) (int64, error) {
+	var sum int64
+	eventType := 1
+	now := time.Now()
+	startTime := now.Add(+(210 * time.Minute))
+	endTime := now.Add(-15*time.Second + 210*time.Minute)
+
+	// GORM query to sum bids
+	err := db.Model(&models.AdsInteraction{}).
+		Where("ad_id = ? AND type = ? AND event_time BETWEEN ? AND ?", adID, eventType, endTime, startTime).
+		Select("SUM(bid)").
+		Scan(&sum).Error
+
+	if err != nil {
+		return 0, err
+	}
+
+	return sum, nil
 }

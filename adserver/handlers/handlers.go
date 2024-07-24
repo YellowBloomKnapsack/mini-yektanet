@@ -4,14 +4,14 @@ import (
 	"encoding/base64"
 	"net/http"
 	"os"
-	"time"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
-	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
+	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
 )
 
 type AdServerHandler struct {
@@ -25,9 +25,9 @@ func NewAdServerHandler(logicService logic.LogicInterface, tokenHandler tokenhan
 	brakeDuration, _ := strconv.Atoi(os.Getenv("BRAKE_DURATION_SECS"))
 
 	return &AdServerHandler{
-		logicService: logicService,
-		tokenHandler: tokenHandler,
-		brakeDuration: time.Duration(brakeDuration),
+		logicService:  logicService,
+		tokenHandler:  tokenHandler,
+		brakeDuration: time.Duration(brakeDuration) * time.Second,
 	}
 }
 
