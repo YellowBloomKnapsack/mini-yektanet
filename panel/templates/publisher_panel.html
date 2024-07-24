@@ -35,7 +35,8 @@
         </div>
         <h3>Performance Over Time</h3>
         <div class="chart-container">
-            <canvas id="performanceChart"></canvas>
+            <canvas id="financialChart"></canvas>
+            <canvas id="viewChart"></canvas>
         </div>
         <div class="transactions-container">
             <h3>Transactions</h3>
@@ -132,8 +133,39 @@
                     console.error('Error:', error);
                 });
         }
-        const ctx = document.getElementById('performanceChart').getContext('2d');
-        new Chart(ctx, {
+        const fc = document.getElementById('financialChart').getContext('2d');
+        new Chart(fc, {
+            type: 'line',
+            data: {
+                labels: {{ .ChartData.Dates }},
+            datasets: [{
+                label: 'Revenue',
+                data: {{ .ChartData.Revenues }},
+            borderColor: 'rgb(54, 162, 235)',
+            tension: 0.1
+            }]
+        },
+            options: {
+            responsive: true,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Count / Amount'
+                    }
+                }
+            }
+        }
+        })
+        const vc = document.getElementById('viewChart').getContext('2d');
+        new Chart(vc, {
             type: 'line',
             data: {
                 labels: {{ .ChartData.Dates }},
@@ -146,11 +178,6 @@
                 label: 'Clicks',
                 data: {{ .ChartData.Clicks }},
             borderColor: 'rgb(255, 99, 132)',
-            tension: 0.1
-            }, {
-                label: 'Revenue',
-                data: {{ .ChartData.Revenues }},
-            borderColor: 'rgb(54, 162, 235)',
             tension: 0.1
             }]
         },
