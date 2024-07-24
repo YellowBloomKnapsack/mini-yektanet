@@ -50,9 +50,9 @@ func TestLogicService_GetBestAd_NoAds(t *testing.T) {
 	assert.Equal(t, "no ad was found", err.Error())
 
 	ads := []*dto.AdDTO{
-		{ID: 1, Text: "Ad 1", Bid: 200, Impressions: 10, TotalCost: 50},
-		{ID: 2, Text: "Ad 2", Bid: 100, Impressions: 10, TotalCost: 100},
-		{ID: 3, Text: "Ad 3", Bid: 150, Impressions: 50, TotalCost: 200},
+		{ID: 1, Text: "Ad 1", Score: 200.0},
+		{ID: 2, Text: "Ad 2", Score: 100.0},
+		{ID: 3, Text: "Ad 3", Score: 150.0},
 	}
 
 	ls.adsList = ads
@@ -71,9 +71,9 @@ func TestLogicService_GetBestAd_WithAds(t *testing.T) {
 	ls, _ := service.(*LogicService)
 
 	ads := []*dto.AdDTO{
-		{ID: 1, Text: "Ad 1", Bid: 200, Impressions: 10, TotalCost: 50},
-		{ID: 2, Text: "Ad 2", Bid: 100, Impressions: 10, TotalCost: 100},
-		{ID: 3, Text: "Ad 3", Bid: 150, Impressions: 50, TotalCost: 200},
+		{ID: 1, Text: "Ad 1", Score: 200.0},
+		{ID: 2, Text: "Ad 2", Score: 100.0},
+		{ID: 3, Text: "Ad 3", Score: 150.0},
 	}
 
 	ls.adsList = ads
@@ -81,15 +81,15 @@ func TestLogicService_GetBestAd_WithAds(t *testing.T) {
 	bestAd, err := ls.GetBestAd()
 	assert.Nil(t, err)
 	assert.NotNil(t, bestAd)
-	assert.Equal(t, uint(2), bestAd.ID)
-	assert.Equal(t, int64(100), bestAd.Bid)
+	assert.Equal(t, uint(1), bestAd.ID)
+	assert.Equal(t, float64(200), bestAd.Score)
 
-	ls.brakedAdIds = map[uint]struct{}{2: {}}
+	ls.brakedAdIds = map[uint]struct{}{1: {}}
 	bestAd, err = ls.GetBestAd()
 	assert.Nil(t, err)
 	assert.NotNil(t, bestAd)
-	assert.Equal(t, uint(1), bestAd.ID)
-	assert.Equal(t, int64(200), bestAd.Bid)
+	assert.Equal(t, uint(3), bestAd.ID)
+	assert.Equal(t, float64(150), bestAd.Score)
 }
 
 func TestLogicService_UpdateAdsList(t *testing.T) {
