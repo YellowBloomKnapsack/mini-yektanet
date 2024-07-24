@@ -46,3 +46,12 @@ func GetActiveAds(c *gin.Context) {
 	c.JSON(http.StatusOK, adDTOs)
 
 }
+func NotifyAdsUpdate() {
+	notifyApiPath := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("AD_SERVER_PORT") + os.Getenv("NOTIFY_API_PATH")
+	resp, err := http.Post(notifyApiPath, "", nil)
+	if err != nil {
+		return
+	}
+
+	defer resp.Body.Close()
+}
