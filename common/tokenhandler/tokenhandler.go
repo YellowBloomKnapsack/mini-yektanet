@@ -1,4 +1,4 @@
-package tokeninterface
+package tokenhandler
 
 import (
 	"crypto/aes"
@@ -13,7 +13,18 @@ import (
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
 
-func encrypt(data []byte, key []byte) (string, error) {
+type TokenHandlerInterface interface {
+	GenerateToken(interaction dto.InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error)
+	VerifyToken(encryptedToken string, key []byte) (*dto.CustomToken, error)
+}
+
+type TokenHandlerService struct {}
+
+func NewTokenHandlerService() TokenHandlerInterface {
+	return &TokenHandlerService{}
+}
+
+func (th *TokenHandlerService) encrypt(data []byte, key []byte) (string, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
@@ -33,7 +44,7 @@ func encrypt(data []byte, key []byte) (string, error) {
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-func GenerateToken(interaction dto.InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error) {
+func (th *TokenHandlerService) GenerateToken(interaction dto.InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error) {
 	token := dto.CustomToken{
 		Interaction:       interaction,
 		AdID:              adID,
@@ -47,7 +58,7 @@ func GenerateToken(interaction dto.InteractionType, adID uint, publisherUsername
 		return "", err
 	}
 
-	encryptedToken, err := encrypt(tokenBytes, key)
+	encryptedToken, err := th.encrypt(tokenBytes, key)
 	if err != nil {
 		return "", err
 	}
@@ -55,7 +66,7 @@ func GenerateToken(interaction dto.InteractionType, adID uint, publisherUsername
 	return encryptedToken, nil
 }
 
-func decrypt(encryptedData string, key []byte) ([]byte, error) {
+func (th *TokenHandlerService) decrypt(encryptedData string, key []byte) ([]byte, error) {
 	data, err := base64.StdEncoding.DecodeString(encryptedData)
 	if err != nil {
 		return nil, err
@@ -80,8 +91,8 @@ func decrypt(encryptedData string, key []byte) ([]byte, error) {
 	return gcm.Open(nil, nonce, ciphertext, nil)
 }
 
-func VerifyToken(encryptedToken string, key []byte) (*dto.CustomToken, error) {
-	tokenBytes, err := decrypt(encryptedToken, key)
+func (th *TokenHandlerService) VerifyToken(encryptedToken string, key []byte) (*dto.CustomToken, error) {
+	tokenBytes, err := th.decrypt(encryptedToken, key)
 	if err != nil {
 		return nil, err
 	}

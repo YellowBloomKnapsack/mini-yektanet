@@ -12,21 +12,39 @@ import (
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
 
-var adsList = make([]*dto.AdDTO, 0)
+type LogicInterface interface {
+	GetBestAd() (*dto.AdDTO, error)
+	StartTicker()
+}
 
-func isBetterThan(lhs, rhs *dto.AdDTO) bool {
+type LogicService struct {
+	adsList []*dto.AdDTO
+	getAdsAPIPath string
+	interval int
+}
+
+func NewLogicService() LogicInterface {
+	interval, _ := strconv.Atoi(os.Getenv("ADS_FETCH_INTERVAL_SECS"))
+	return &LogicService{
+		adsList: make([]*dto.AdDTO, 0),
+		getAdsAPIPath: "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API"),
+		interval: interval,
+	}
+}
+
+func (ls *LogicService) isBetterThan(lhs, rhs *dto.AdDTO) bool {
 	return rhs.Bid > lhs.Bid
 }
 
-func GetBestAd() (*dto.AdDTO, error) {
-	if len(adsList) == 0 {
+func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
+	if len(ls.adsList) == 0 {
 		return nil, fmt.Errorf("no ad was found")
 	}
 
-	bestAd := adsList[0]
+	bestAd := ls.adsList[0]
 
-	for _, ad := range adsList {
-		if isBetterThan(bestAd, ad) {
+	for _, ad := range ls.adsList {
+		if ls.isBetterThan(bestAd, ad) {
 			bestAd = ad
 		}
 	}
@@ -34,11 +52,10 @@ func GetBestAd() (*dto.AdDTO, error) {
 	return bestAd, nil
 }
 
-func updateAdsList() error {
+func (ls *LogicService) updateAdsList() error {
 	fmt.Println("Fetching ads from panel API...")
 
-	getAdsAPIPath := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API")
-	resp, err := http.Get(getAdsAPIPath)
+	resp, err := http.Get(ls.getAdsAPIPath)
 	if err != nil {
 		return fmt.Errorf("failed to fetch ads: %v", err)
 	}
@@ -63,24 +80,25 @@ func updateAdsList() error {
 		newAdsList = append(newAdsList, &ad)
 	}
 
-	fmt.Printf("%d new ads were fetched.\n", len(newAdsList) - len(adsList))
-	adsList = newAdsList
+	fmt.Printf("%d new ads were fetched.\n", len(newAdsList) - len(ls.adsList))
+	ls.adsList = newAdsList
 
 	return nil
 }
 
-func StartTicker() {
-	interval, _ := strconv.Atoi(os.Getenv("ADS_FETCH_INTERVAL_SECS"))
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
-	defer ticker.Stop()
+func (ls *LogicService) StartTicker() {
+	go func() {
+		ticker := time.NewTicker(time.Duration(ls.interval) * time.Second)
+		defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			err := updateAdsList()
-			if err != nil {
-			    fmt.Println(err)
+		for {
+			select {
+			case <-ticker.C:
+				err := ls.updateAdsList()
+				if err != nil {
+			    	fmt.Println(err)
+				}
 			}
 		}
-	}
+	}()
 }
