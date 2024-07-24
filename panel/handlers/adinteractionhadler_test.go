@@ -19,11 +19,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMain(m *testing.M) {
-	cleanup := setupTest()
-	m.Run()
-	cleanup()
-}
 
 // Almost the same as the above, but this one is for single test instead of collection of tests
 func setupTest() func() {
