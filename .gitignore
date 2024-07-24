@@ -28,3 +28,5 @@
 
 # .idea directory
 .idea
+
+**/test*.db
