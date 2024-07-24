@@ -29,7 +29,7 @@ func main() {
 	}))
 
 	r.GET("/:publisherUsername", handler.GetAd)
-	r.POST("/brake/:adId", handler.BrakeAd)
+	r.POST(os.Getenv("NOTIFY_API_PATH") + "/:adId", handler.BrakeAd)
 
 	port := os.Getenv("AD_SERVER_PORT")
 	if port == "" {
