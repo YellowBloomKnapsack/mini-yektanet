@@ -47,7 +47,7 @@ func HandleClickAdInteraction(c *gin.Context) {
 		Type:        int(interactionType),
 		EventTime:   request.EventTime,
 		AdID:        ad.ID,
-		Bid: ad.Bid,
+		Bid:         ad.Bid,
 		PublisherID: publisher.ID,
 	}
 
@@ -97,7 +97,9 @@ func HandleClickAdInteraction(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create transaction"})
 		return
 	}
-
+	if ad.Advertiser.Balance-ad.Bid < 0 && ad.Advertiser.Balance >= 0 {
+		go NotifyAdsUpdate()
+	}
 	// Decrease advertiser's balance
 	if err := tx.Model(&ad.Advertiser).Update("balance", gorm.Expr("balance - ?", ad.Bid)).Error; err != nil {
 		tx.Rollback()
@@ -158,7 +160,7 @@ func HandleImpressionAdInteraction(c *gin.Context) {
 		EventTime:   request.EventTime,
 		AdID:        ad.ID,
 		PublisherID: publisher.ID,
-		Bid: ad.Bid,
+		Bid:         ad.Bid,
 	}
 
 	if err := database.DB.Create(&interaction).Error; err != nil {
