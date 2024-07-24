@@ -97,8 +97,9 @@ func HandleClickAdInteraction(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create transaction"})
 		return
 	}
-	if ad.Advertiser.Balance-ad.Bid < 0 && ad.Advertiser.Balance >= 0 {
-		go NotifyAdsUpdate()
+	sum, _ := getSumOfBids(database.DB, ad.ID)
+	if sum > ad.Advertiser.Balance {
+		go NotifyAdsBrake(ad.ID)
 	}
 	// Decrease advertiser's balance
 	if err := tx.Model(&ad.Advertiser).Update("balance", gorm.Expr("balance - ?", ad.Bid)).Error; err != nil {

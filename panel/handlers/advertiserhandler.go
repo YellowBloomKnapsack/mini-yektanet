@@ -83,9 +83,9 @@ func AddFunds(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch advertiser"})
 		return
 	}
-	if advertiser.Balance < 0 && advertiser.Balance+amount >= 0 {
-		go NotifyAdsUpdate()
-	}
+	//if advertiser.Balance < 0 && advertiser.Balance+amount >= 0 {
+	//	go NotifyAdsUpdate()
+	//}
 	// Update the advertiser's balance
 	advertiser.Balance += amount
 	if err := tx.Save(&advertiser).Error; err != nil {
