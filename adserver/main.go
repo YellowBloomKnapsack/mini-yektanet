@@ -4,12 +4,13 @@ import (
 	"log"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
 	"YellowBloomKnapsack/mini-yektanet/adserver/handlers"
 	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
-	"github.com/gin-contrib/cors"
+	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
 )
 
 func main() {
@@ -17,14 +18,16 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	go logic.StartTicker()
+	tokenHandler := tokenhandler.NewTokenHandlerService()
+	logicService := logic.NewLogicService()
+	handler := handlers.NewAdServerHandler(logicService, tokenHandler)
 
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins: true,
 	}))
-	r.GET("/:publisherUsername", handlers.GetAd)
+	r.GET("/:publisherUsername", handler.GetAd)
 
 	port := os.Getenv("AD_SERVER_PORT")
 	if port == "" {

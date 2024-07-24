@@ -5,7 +5,8 @@ import (
 	"os"
 
 	"YellowBloomKnapsack/mini-yektanet/eventserver/handlers"
-	"YellowBloomKnapsack/mini-yektanet/eventserver/eventschannel"
+	"YellowBloomKnapsack/mini-yektanet/eventserver/worker"
+	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -17,16 +18,18 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-    eventschannel.Start()
+	tokenHandler := tokenhandler.NewTokenHandlerService()
+	worker := worker.NewWorkerService()
+	handler := handlers.NewEventServerHandler(tokenHandler, worker)
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins: true,
 	}))
 
-	r.POST(os.Getenv("CLICK_REQ_PATH"), handlers.PostClick)
+	r.POST(os.Getenv("CLICK_REQ_PATH"), handler.PostClick)
 
-	r.POST(os.Getenv("IMPRESSION_REQ_PATH"), handlers.PostImpression)
+	r.POST(os.Getenv("IMPRESSION_REQ_PATH"), handler.PostImpression)
 
 	port := os.Getenv("EVENT_SERVER_PORT")
 	if port == "" {
