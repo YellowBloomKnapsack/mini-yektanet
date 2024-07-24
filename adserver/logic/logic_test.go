@@ -48,6 +48,20 @@ func TestLogicService_GetBestAd_NoAds(t *testing.T) {
 	assert.Nil(t, ad)
 	assert.NotNil(t, err)
 	assert.Equal(t, "no ad was found", err.Error())
+
+	ads := []*dto.AdDTO{
+		{ID: 1, Text: "Ad 1", Bid: 200, Impressions: 10, TotalCost: 50},
+		{ID: 2, Text: "Ad 2", Bid: 100, Impressions: 10, TotalCost: 100},
+		{ID: 3, Text: "Ad 3", Bid: 150, Impressions: 50, TotalCost: 200},
+	}
+
+	ls.adsList = ads
+	ls.brakedAdIds = map[uint]struct{}{1: {}, 2: {}, 3: {}}
+
+	ad, err = ls.GetBestAd()
+	assert.Nil(t, ad)
+	assert.NotNil(t, err)
+	assert.Equal(t, "no ad was found", err.Error())
 }
 
 func TestLogicService_GetBestAd_WithAds(t *testing.T) {
@@ -69,6 +83,13 @@ func TestLogicService_GetBestAd_WithAds(t *testing.T) {
 	assert.NotNil(t, bestAd)
 	assert.Equal(t, uint(2), bestAd.ID)
 	assert.Equal(t, int64(100), bestAd.Bid)
+
+	ls.brakedAdIds = map[uint]struct{}{2: {}}
+	bestAd, err = ls.GetBestAd()
+	assert.Nil(t, err)
+	assert.NotNil(t, bestAd)
+	assert.Equal(t, uint(1), bestAd.ID)
+	assert.Equal(t, int64(200), bestAd.Bid)
 }
 
 func TestLogicService_UpdateAdsList(t *testing.T) {
@@ -121,4 +142,30 @@ func TestLogicService_StartTicker(t *testing.T) {
 	assert.Equal(t, 2, len(ls.adsList))
 	assert.Equal(t, uint(1), ls.adsList[0].ID)
 	assert.Equal(t, uint(2), ls.adsList[1].ID)
+}
+
+func TestLogicService_BrakeAd(t *testing.T) {
+	// Define test parameters
+	adId := uint(1)
+	duration := 500 * time.Millisecond
+
+	service := NewLogicService()
+	ls, _ := service.(*LogicService)
+
+	ls.BrakeAd(adId, duration)
+
+	// Check if adId is added to the map
+	if _, found := ls.brakedAdIds[adId]; !found {
+		t.Errorf("expected adId %d to be in the map", adId)
+		return
+	}
+
+	// Wait for the specified duration plus a small buffer to ensure removal
+	time.Sleep(duration + 100*time.Millisecond)
+
+	// Check if adId is removed from the map
+	if _, found := ls.brakedAdIds[adId]; found {
+		t.Errorf("expected adId %d to be removed from the map", adId)
+		return
+	}
 }

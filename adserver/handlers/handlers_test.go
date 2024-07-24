@@ -7,6 +7,8 @@ import (
 	"os"
 	"testing"
 	"encoding/base64"
+	"time"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -26,6 +28,8 @@ func (m *MockLogicService) GetBestAd() (*dto.AdDTO, error) {
 }
 
 func (m *MockLogicService) StartTicker() {}
+
+func (m *MockLogicService) BrakeAd(uint, time.Duration) {}
 
 type MockTokenHandler struct {
 	GenerateTokenResult string
@@ -95,4 +99,63 @@ func TestGetAd(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
+}
+
+type MockLogicService_Brake struct {
+	BrakeAdCalled    bool
+	BrakeAdAdId      uint
+	BrakeAdDuration  time.Duration
+}
+
+func (m *MockLogicService_Brake) GetBestAd() (*dto.AdDTO, error) {
+	return nil, nil
+}
+
+func (m *MockLogicService_Brake) StartTicker() {}
+
+func (m *MockLogicService_Brake) BrakeAd(adId uint, duration time.Duration) {
+	m.BrakeAdCalled = true
+	m.BrakeAdAdId = adId
+	m.BrakeAdDuration = duration
+}
+
+// TestBrakeAdHandler tests the BrakeAd handler function
+func TestBrakeAdHandler(t *testing.T) {
+	// Initialize Gin and create a test server
+	gin.SetMode(gin.TestMode)
+	r := gin.Default()
+
+	// Initialize the mock service
+	mockLogicService := &MockLogicService_Brake{
+		BrakeAdCalled: false,
+	}
+
+	handler := &AdServerHandler{
+		logicService:  mockLogicService,
+		brakeDuration: 1 * time.Second, // Set your test duration here
+	}
+
+	// Register the route and handler
+	r.POST("/brakeAd/:adId", handler.BrakeAd)
+
+	// Setup mock expectations
+	adId := 123
+
+	// Create a request to test the handler
+	req, err := http.NewRequest("POST", "/brakeAd/"+strconv.Itoa(adId), nil)
+	if err != nil {
+		t.Fatalf("could not create request: %v", err)
+	}
+
+	// Record the response
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// Assert the response
+	assert.Equal(t, http.StatusOK, w.Code, "Expected status code 200")
+
+	// Assert that BrakeAd was called with the correct parameters
+	assert.True(t, mockLogicService.BrakeAdCalled, "BrakeAd should have been called")
+	assert.Equal(t, uint(adId), mockLogicService.BrakeAdAdId, "BrakeAd adId should match")
+	assert.Equal(t, handler.brakeDuration, mockLogicService.BrakeAdDuration, "BrakeAd duration should match")
 }

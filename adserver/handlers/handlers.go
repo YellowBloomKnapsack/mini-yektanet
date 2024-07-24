@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"net/http"
 	"os"
+	"time"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -13,15 +15,19 @@ import (
 )
 
 type AdServerHandler struct {
-	logicService logic.LogicInterface
-	tokenHandler tokenhandler.TokenHandlerInterface
+	logicService  logic.LogicInterface
+	tokenHandler  tokenhandler.TokenHandlerInterface
+	brakeDuration time.Duration
 }
 
 func NewAdServerHandler(logicService logic.LogicInterface, tokenHandler tokenhandler.TokenHandlerInterface) *AdServerHandler {
 	logicService.StartTicker()
+	brakeDuration, _ := strconv.Atoi(os.Getenv("BRAKE_DURATION_SECS"))
+
 	return &AdServerHandler{
 		logicService: logicService,
 		tokenHandler: tokenHandler,
+		brakeDuration: time.Duration(brakeDuration),
 	}
 }
 
@@ -55,4 +61,14 @@ func (h *AdServerHandler) GetAd(c *gin.Context) {
 		"impression_token": impressionToken,
 		"click_token":      clickToken,
 	})
+}
+
+func (h *AdServerHandler) BrakeAd(c *gin.Context) {
+	adId, err := strconv.Atoi(c.Param("adId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid adId"})
+		return
+	}
+
+	h.logicService.BrakeAd(uint(adId), h.brakeDuration)
 }

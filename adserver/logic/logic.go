@@ -15,20 +15,23 @@ import (
 type LogicInterface interface {
 	GetBestAd() (*dto.AdDTO, error)
 	StartTicker()
+	BrakeAd(adId uint, duration time.Duration)
 }
 
 type LogicService struct {
-	adsList []*dto.AdDTO
+	adsList       []*dto.AdDTO
+	brakedAdIds   map[uint]struct{}
 	getAdsAPIPath string
-	interval int
+	interval      int
 }
 
 func NewLogicService() LogicInterface {
 	interval, _ := strconv.Atoi(os.Getenv("ADS_FETCH_INTERVAL_SECS"))
 	return &LogicService{
-		adsList: make([]*dto.AdDTO, 0),
+		adsList:       make([]*dto.AdDTO, 0),
+		brakedAdIds:   make(map[uint]struct{}, 0),
 		getAdsAPIPath: "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API"),
-		interval: interval,
+		interval:      interval,
 	}
 }
 
@@ -42,14 +45,26 @@ func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
 	}
 
 	bestAd := ls.adsList[0]
+	anyValidMap := false
 
 	for _, ad := range ls.adsList {
+		_, ok := ls.brakedAdIds[ad.ID]
+		if ok {
+			continue
+		}
+		anyValidMap = true
+
 		if ls.isBetterThan(bestAd, ad) {
 			bestAd = ad
 		}
 	}
 
-	return bestAd, nil
+	if anyValidMap {
+		return bestAd, nil
+	} else {
+		return nil, fmt.Errorf("no ad was found")
+	}
+
 }
 
 func (ls *LogicService) updateAdsList() error {
@@ -100,5 +115,15 @@ func (ls *LogicService) StartTicker() {
 				}
 			}
 		}
+	}()
+}
+
+func (ls *LogicService) BrakeAd(adId uint, duration time.Duration) {
+	ls.brakedAdIds[adId] = struct{}{}
+
+	// Start a new goroutine to remove the adId after the specified duration
+	go func() {
+		time.Sleep(duration)
+		delete(ls.brakedAdIds, adId)
 	}()
 }
