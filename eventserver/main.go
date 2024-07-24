@@ -2,8 +2,11 @@ package main
 
 import (
 	"log"
+	"time"
+	"strconv"
 	"os"
 
+	"YellowBloomKnapsack/mini-yektanet/eventserver/cache"
 	"YellowBloomKnapsack/mini-yektanet/eventserver/handlers"
 	"YellowBloomKnapsack/mini-yektanet/eventserver/worker"
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
@@ -20,7 +23,13 @@ func main() {
 
 	tokenHandler := tokenhandler.NewTokenHandlerService()
 	worker := worker.NewWorkerService()
-	handler := handlers.NewEventServerHandler(tokenHandler, worker)
+
+	redisUrl := os.Getenv("REDIS_URL")
+	redisExpireHour, _ := strconv.Atoi("REDIS_EXPIRE_HOUR")
+
+	cache := cache.NewCacheService(time.Duration(redisExpireHour) * time.Hour, redisUrl)
+	
+	handler := handlers.NewEventServerHandler(tokenHandler, worker, cache)
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
