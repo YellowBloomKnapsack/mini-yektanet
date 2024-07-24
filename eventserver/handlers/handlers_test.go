@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
 
@@ -19,7 +20,7 @@ type MockTokenHandler struct{}
 
 func (m *MockTokenHandler) GenerateToken(interaction dto.InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error) {
 	// Not needed for these tests
-	return "", nil
+	return "duplicate", nil
 }
 
 func (m *MockTokenHandler) VerifyToken(encryptedToken string, key []byte) (*dto.CustomToken, error) {
@@ -55,14 +56,28 @@ func (m *MockWorkerService) InvokeImpressionEvent(data *dto.CustomToken, impress
 	m.impressionEventData = data
 }
 
+// Mock CacheService
+type MockCacheService struct {
+	times int
+}
+
+func (m *MockCacheService) IsPresent(token string) bool {
+	return m.times > 0
+}
+
+func (m *MockCacheService) Add(token string) {
+	m.times++
+}
+
 func TestPostClick(t *testing.T) {
 	privateKey := "c2VjcmV0" // base64 for 'secret'
 	os.Setenv("PRIVATE_KEY", privateKey)
 
 	mockTokenHandler := &MockTokenHandler{}
 	mockWorkerService := &MockWorkerService{}
+	mockCacheService := &MockCacheService{times: 0}
 
-	handler := NewEventServerHandler(mockTokenHandler, mockWorkerService)
+	handler := NewEventServerHandler(mockTokenHandler, mockWorkerService, mockCacheService)
 
 	r := gin.Default()
 	r.POST("/click", handler.PostClick)
@@ -80,6 +95,16 @@ func TestPostClick(t *testing.T) {
 	assert.Equal(t, "user1", mockWorkerService.clickEventData.PublisherUsername)
 	assert.Equal(t, uint(123), mockWorkerService.clickEventData.AdID)
 	assert.Equal(t, "http://example.com", mockWorkerService.clickEventData.RedirectPath)
+
+	// Request should not be send
+	req = httptest.NewRequest(http.MethodPost, "/click", nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Body = ioutil.NopCloser(bytes.NewReader([]byte(`{"token":"dummy-token"}`)))
+
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, w.Body.Len(), 0)
 }
 
 func TestPostImpression(t *testing.T) {
@@ -88,8 +113,9 @@ func TestPostImpression(t *testing.T) {
 
 	mockTokenHandler := &MockTokenHandler{}
 	mockWorkerService := &MockWorkerService{}
+	mockCacheService := &MockCacheService{times: 0}
 
-	handler := NewEventServerHandler(mockTokenHandler, mockWorkerService)
+	handler := NewEventServerHandler(mockTokenHandler, mockWorkerService, mockCacheService)
 
 	r := gin.Default()
 	r.POST("/impression", handler.PostImpression)
@@ -106,5 +132,15 @@ func TestPostImpression(t *testing.T) {
 	assert.NotNil(t, mockWorkerService.impressionEventData)
 	assert.Equal(t, "user1", mockWorkerService.impressionEventData.PublisherUsername)
 	assert.Equal(t, uint(123), mockWorkerService.impressionEventData.AdID)
+
+	// Request should not be send
+	req = httptest.NewRequest(http.MethodPost, "/impression", nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Body = ioutil.NopCloser(bytes.NewReader([]byte(`{"token":"dummy-token"}`)))
+
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, w.Body.Len(), 0)
 }
 
