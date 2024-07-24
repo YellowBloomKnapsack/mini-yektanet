@@ -1,20 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ad Report</title>
+    <link rel="stylesheet" href="/static/css/styles-ad-report.css">
 </head>
 
 <body>
-    <h1>Ad Report</h1>
-    <p>Ad: {{ .Ad.Text }}</p>
-    <p>Image: <img src="{{ .Ad.ImagePath }}" alt="{{ .Ad.Text }}"></p>
-    <p>Website: <a href="{{.Website}}">{{.Website}}</a></p>
-    <p>Impressions: {{ .Impressions }}</p>
-    <p>Clicks: {{ .Clicks }}</p>
-    <p>CTR: {{ printf "%.2f%%" .CTR }}</p>
-    <p>Total Cost: {{ .TotalCost }}</p>
-    <a href="/advertiser/{{ .Ad.Advertiser.Username }}/panel">Back to Panel</a>
+
+    <header>
+        <h1>Ad Report</h1>
+    </header>
+
+    <div class="container">
+        <div class="content">
+            <div class="text-content">
+                <p class="ad-title">Ad: {{ .Ad.Text }}</p>
+                <p class="ad-stat">Impressions: {{ .Impressions }}</p>
+                <p class="ad-stat">Clicks: {{ .Clicks }}</p>
+                <p class="ad-stat">CTR: {{ printf "%.2f%%" .CTR }}</p>
+                <p class="ad-stat">Total Cost: {{ .TotalCost }}</p>
+                <p>Website: <a href="{{.Website}}" target="_blank">{{.Website}}</a></p>
+                <a href="/advertiser/{{ .Ad.Advertiser.Username }}/panel" class="back-button">Back to Panel</a>
+            </div>
+            <div>
+                <p>Image:</p>
+                <img src="{{ .Ad.ImagePath }}" alt="{{ .Ad.Text }}">
+            </div>
+        </div>
+
+        <!-- Example of a data table if needed -->
+        <!--
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Impressions</th>
+                    <th>Clicks</th>
+                    <th>CTR</th>
+                    <th>Total Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>2024-07-01</td>
+                    <td>1000</td>
+                    <td>50</td>
+                    <td>5.00%</td>
+                    <td>$100</td>
+                </tr>
+                <tr>
+                    <td>2024-07-02</td>
+                    <td>1200</td>
+                    <td>60</td>
+                    <td>5.00%</td>
+                    <td>$120</td>
+                </tr>
+            </tbody>
+        </table>
+        -->
+    </div>
+
 </body>
 
 </html>
