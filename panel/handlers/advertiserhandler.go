@@ -28,7 +28,7 @@ func AdvertiserPanel(c *gin.Context) {
 	result := database.DB.Preload("Ads").Preload("Transactions").Where("username = ?", advertiserUserName).First(&advertiser)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
-			fmt.Println("No advertiser found with username %s, creating a new one.", advertiserUserName)
+			fmt.Printf("No advertiser found with username %s, creating a new one.\n", advertiserUserName)
 			newAdvertiser := models.Advertiser{
 				Username: advertiserUserName,
 				Balance:  0,
