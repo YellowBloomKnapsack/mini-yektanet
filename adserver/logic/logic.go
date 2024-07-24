@@ -36,7 +36,8 @@ func NewLogicService() LogicInterface {
 }
 
 func (ls *LogicService) isBetterThan(lhs, rhs *dto.AdDTO) bool {
-	return (rhs.TotalCost / int64(rhs.Impressions)) > (lhs.TotalCost / int64(lhs.Impressions))
+
+	return (rhs.TotalCost / int64(rhs.Impressions+1)) > (lhs.TotalCost / int64(lhs.Impressions+1))
 }
 
 func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
@@ -44,11 +45,20 @@ func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
 		return nil, fmt.Errorf("no ad was found")
 	}
 
-	bestAd := ls.adsList[0]
+	i := 0
+	for i = 0; i < len(ls.adsList); i++ {
+		_, ok := ls.brakedAdIds[ls.adsList[i].ID]
+		if !ok {
+			break
+		}
+	}
+
+	bestAd := ls.adsList[i]
 	anyValidMap := false
 
 	for _, ad := range ls.adsList {
 		_, ok := ls.brakedAdIds[ad.ID]
+		fmt.Println(ls.brakedAdIds, ad.ID)
 		if ok {
 			continue
 		}
@@ -95,7 +105,7 @@ func (ls *LogicService) updateAdsList() error {
 		newAdsList = append(newAdsList, &ad)
 	}
 
-	fmt.Printf("%d new ads were fetched.\n", len(newAdsList) - len(ls.adsList))
+	fmt.Printf("%d new ads were fetched.\n", len(newAdsList)-len(ls.adsList))
 	ls.adsList = newAdsList
 
 	return nil
@@ -111,7 +121,7 @@ func (ls *LogicService) StartTicker() {
 			case <-ticker.C:
 				err := ls.updateAdsList()
 				if err != nil {
-			    	fmt.Println(err)
+					fmt.Println(err)
 				}
 			}
 		}

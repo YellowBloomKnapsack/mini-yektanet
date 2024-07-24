@@ -66,8 +66,8 @@ func getSumOfBids(db *gorm.DB, adID uint) (int64, error) {
 	var sum int64
 	eventType := 1
 	now := time.Now()
-	startTime := now
-	endTime := now.Add(-15 * time.Second)
+	startTime := now.Add(+(210 * time.Minute))
+	endTime := now.Add(-15*time.Second + 210*time.Minute)
 
 	// GORM query to sum bids
 	err := db.Model(&models.AdsInteraction{}).
