@@ -4,6 +4,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
@@ -50,7 +51,9 @@ func GetActiveAds(c *gin.Context) {
 }
 
 func NotifyAdsBrake(adId uint) {
-	notifyApiPath := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("AD_SERVER_PORT") + os.Getenv("NOTIFY_API_PATH") + "/adID"
+	adIdStr := strconv.FormatUint(uint64(adId), 10)
+
+	notifyApiPath := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("AD_SERVER_PORT") + os.Getenv("NOTIFY_API_PATH") + "/" + adIdStr
 	resp, err := http.Post(notifyApiPath, "", nil)
 	if err != nil {
 		return
