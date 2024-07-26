@@ -27,7 +27,7 @@ func GetActiveAds(c *gin.Context) {
 		adDTO := dto.AdDTO{
 			ID:                ad.ID,
 			Text:              ad.Text,
-			ImagePath:         "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + ad.ImagePath,
+			ImagePath:         "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + ad.ImagePath,
 			Bid:               ad.Bid,
 			Website:           ad.Website,
 			TotalCost:         ad.TotalCost,
@@ -45,7 +45,7 @@ func GetActiveAds(c *gin.Context) {
 func NotifyAdsBrake(adId uint) {
 	adIdStr := strconv.FormatUint(uint64(adId), 10)
 
-	notifyApiPath := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("AD_SERVER_PORT") + os.Getenv("NOTIFY_API_PATH") + "/" + adIdStr
+	notifyApiPath := "http://" + os.Getenv("AD_SERVER_HOSTNAME") + ":" + os.Getenv("AD_SERVER_PORT") + os.Getenv("NOTIFY_API_PATH") + "/" + adIdStr
 	resp, err := http.Post(notifyApiPath, "", nil)
 	if err != nil {
 		return

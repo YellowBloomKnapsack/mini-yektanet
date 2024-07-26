@@ -1,9 +1,9 @@
-package cache 
+package cache
 
 import (
-	"time"
-	"log"
 	"context"
+	"log"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -22,9 +22,9 @@ func NewCacheService(expireDuration time.Duration, redisUrl string) CacheInterfa
 	return &CacheService{
 		expireDuration: expireDuration,
 		redisClient: *redis.NewClient(&redis.Options{
-			Addr:	  redisUrl,
-        	Password: "", // no password set
-        	DB:		  0,  // use default DB
+			Addr:     redisUrl,
+			Password: "", // no password set
+			DB:       0,  // use default DB
 		}),
 	}
 }
@@ -48,4 +48,3 @@ func (r *CacheService) Add(token string) {
 		log.Print(err)
 	}
 }
-

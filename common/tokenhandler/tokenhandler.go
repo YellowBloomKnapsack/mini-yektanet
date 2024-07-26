@@ -6,9 +6,9 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"time"
-	"errors"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
@@ -18,7 +18,7 @@ type TokenHandlerInterface interface {
 	VerifyToken(encryptedToken string, key []byte) (*dto.CustomToken, error)
 }
 
-type TokenHandlerService struct {}
+type TokenHandlerService struct{}
 
 func NewTokenHandlerService() TokenHandlerInterface {
 	return &TokenHandlerService{}

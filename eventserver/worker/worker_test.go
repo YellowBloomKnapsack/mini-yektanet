@@ -15,7 +15,7 @@ func setupTestEnvironment() func() {
 	// Save original environment variables
 	oldClickBuffSize := os.Getenv("CLICK_BUFF_SIZE")
 	oldImpressionBuffSize := os.Getenv("IMPRESSION_BUFF_SIZE")
-	oldHostName := os.Getenv("HOSTNAME")
+	oldHostName := os.Getenv("PANEL_HOSTNAME")
 	oldPanelPort := os.Getenv("PANEL_PORT")
 	oldClickApi := os.Getenv("INTERACTION_CLICK_API")
 	oldImpressionApi := os.Getenv("INTERACTION_IMPRESSION_API")
@@ -23,7 +23,7 @@ func setupTestEnvironment() func() {
 	// Set test environment variables
 	os.Setenv("CLICK_BUFF_SIZE", "10")
 	os.Setenv("IMPRESSION_BUFF_SIZE", "10")
-	os.Setenv("HOSTNAME", "localhost")
+	os.Setenv("PANEL_HOSTNAME", "localhost")
 	os.Setenv("PANEL_PORT", "8080")
 	os.Setenv("INTERACTION_CLICK_API", "/click")
 	os.Setenv("INTERACTION_IMPRESSION_API", "/impression")
@@ -32,7 +32,7 @@ func setupTestEnvironment() func() {
 	return func() {
 		os.Setenv("CLICK_BUFF_SIZE", oldClickBuffSize)
 		os.Setenv("IMPRESSION_BUFF_SIZE", oldImpressionBuffSize)
-		os.Setenv("HOSTNAME", oldHostName)
+		os.Setenv("PANEL_HOSTNAME", oldHostName)
 		os.Setenv("PANEL_PORT", oldPanelPort)
 		os.Setenv("INTERACTION_CLICK_API", oldClickApi)
 		os.Setenv("INTERACTION_IMPRESSION_API", oldImpressionApi)

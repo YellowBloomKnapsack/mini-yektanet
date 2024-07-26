@@ -50,5 +50,5 @@ func main() {
 	if port == "" {
 		port = "8083"
 	}
-	r.Run(os.Getenv("HOSTNAME") + ":" + port)
+	r.Run(os.Getenv("PANEL_HOSTNAME") + ":" + port)
 }
