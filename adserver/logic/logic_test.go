@@ -84,31 +84,6 @@ func TestValidsOn(t *testing.T) {
 	assert.Equal(t, uint(4), validAds[2].ID)
 }
 
-func TestGetBestAd(t *testing.T) {
-	setupEnv()
-	os.Setenv("UNVISITED_CHANCE", "100")
-
-	ls := NewLogicService().(*LogicService)
-
-	ls.visitedAds = []*dto.AdDTO{
-		{ID: 1, Score: 5},
-	}
-
-	ls.unvisitedAds = []*dto.AdDTO{
-		{ID: 2, Score: 10},
-	}
-
-	bestAd, err := ls.GetBestAd()
-	assert.NoError(t, err)
-	assert.Equal(t, uint(2), bestAd.ID)
-
-	os.Setenv("UNVISITED_CHANCE", "0")
-
-	bestAd, err = ls.GetBestAd()
-	assert.NoError(t, err)
-	assert.Equal(t, uint(1), bestAd.ID)
-}
-
 func TestUpdateAdsList(t *testing.T) {
 	setupEnv()
 
@@ -185,4 +160,121 @@ func TestBrakeAd(t *testing.T) {
 		t.Errorf("expected adId %d to be removed from the map", adId)
 		return
 	}
+}
+
+func TestGetBestAd_NoAdsAvailable(t *testing.T) {
+	ls := NewLogicService().(*LogicService)
+
+	_, err := ls.GetBestAd()
+	assert.Error(t, err)
+	assert.Equal(t, "no ad was found", err.Error())
+}
+
+func TestGetBestAd_OnlyUnvisitedAdsAvailable(t *testing.T) {
+	os.Setenv("UNVISITED_CHANCE", "100")
+
+	ls := NewLogicService().(*LogicService)
+	ls.unvisitedAds = []*dto.AdDTO{
+		{ID: 1, Score: 5},
+		{ID: 2, Score: 10},
+	}
+
+	bestAd, err := ls.GetBestAd()
+	assert.NoError(t, err)
+	assert.Contains(t, []uint{1, 2}, bestAd.ID)
+}
+
+func TestGetBestAd_OnlyVisitedAdsAvailable(t *testing.T) {
+	ls := NewLogicService().(*LogicService)
+	ls.visitedAds = []*dto.AdDTO{
+		{ID: 1, Score: 5},
+		{ID: 2, Score: 10},
+	}
+
+	bestAd, err := ls.GetBestAd()
+	assert.NoError(t, err)
+	assert.Equal(t, uint(2), bestAd.ID)
+}
+
+func TestGetBestAd_BothAdsAvailable_UnvisitedChance100(t *testing.T) {
+	os.Setenv("UNVISITED_CHANCE", "100")
+
+	ls := NewLogicService().(*LogicService)
+	ls.visitedAds = []*dto.AdDTO{
+		{ID: 1, Score: 5},
+	}
+	ls.unvisitedAds = []*dto.AdDTO{
+		{ID: 2, Score: 10},
+	}
+
+	bestAd, err := ls.GetBestAd()
+	assert.NoError(t, err)
+	assert.Equal(t, uint(2), bestAd.ID)
+}
+
+func TestGetBestAd_BothAdsAvailable_UnvisitedChance0(t *testing.T) {
+	os.Setenv("UNVISITED_CHANCE", "0")
+
+	ls := NewLogicService().(*LogicService)
+	ls.visitedAds = []*dto.AdDTO{
+		{ID: 1, Score: 5},
+	}
+	ls.unvisitedAds = []*dto.AdDTO{
+		{ID: 2, Score: 10},
+	}
+
+	bestAd, err := ls.GetBestAd()
+	assert.NoError(t, err)
+	assert.Equal(t, uint(1), bestAd.ID)
+}
+
+func TestGetBestAd_ValidUnvisitedAdsAvailable(t *testing.T) {
+	os.Setenv("UNVISITED_CHANCE", "100")
+
+	ls := NewLogicService().(*LogicService)
+	ls.unvisitedAds = []*dto.AdDTO{
+		{ID: 1, Score: 5},
+		{ID: 2, Score: 10},
+	}
+
+	// Braking one of the ads to make it invalid
+	ls.BrakeAd(1, 1*time.Minute)
+
+	bestAd, err := ls.GetBestAd()
+	assert.NoError(t, err)
+	assert.Equal(t, uint(2), bestAd.ID)
+}
+
+func TestGetBestAd_ValidVisitedAdsAvailable(t *testing.T) {
+	ls := NewLogicService().(*LogicService)
+	ls.visitedAds = []*dto.AdDTO{
+		{ID: 1, Score: 5},
+		{ID: 2, Score: 10},
+	}
+
+	// Braking one of the ads to make it invalid
+	ls.BrakeAd(2, 1*time.Minute)
+
+	bestAd, err := ls.GetBestAd()
+	assert.NoError(t, err)
+	assert.Equal(t, uint(1), bestAd.ID)
+}
+
+func TestGetBestAd_ValidUnvisitedAndVisitedAdsAvailable(t *testing.T) {
+	os.Setenv("UNVISITED_CHANCE", "50")
+
+	ls := NewLogicService().(*LogicService)
+	ls.visitedAds = []*dto.AdDTO{
+		{ID: 1, Score: 5},
+	}
+	ls.unvisitedAds = []*dto.AdDTO{
+		{ID: 2, Score: 10},
+	}
+
+	// Braking the unvisited ad to make it invalid
+	ls.BrakeAd(2, 1*time.Minute)
+
+	bestAd, err := ls.GetBestAd()
+	assert.NoError(t, err)
+	assert.Equal(t, uint(1), bestAd.ID)
 }
