@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strconv"
 	"testing"
 	"time"
 
@@ -21,133 +20,151 @@ func setupEnv() {
 	os.Setenv("ADS_FETCH_INTERVAL_SECS", "1")
 }
 
-func TestNewLogicService(t *testing.T) {
+func TestBestScoreOn(t *testing.T) {
 	setupEnv()
 
-	interval, _ := strconv.Atoi(os.Getenv("ADS_FETCH_INTERVAL_SECS"))
-	service := NewLogicService()
-
-	ls, ok := service.(*LogicService)
-	if !ok {
-		t.Fatalf("expected LogicService, got %T", service)
-	}
-
-	assert.NotNil(t, ls)
-	assert.Equal(t, 0, len(ls.adsList))
-	assert.Equal(t, "http://localhost:8080/ads", ls.getAdsAPIPath)
-	assert.Equal(t, interval, ls.interval)
-}
-
-func TestLogicService_GetBestAd_NoAds(t *testing.T) {
-	setupEnv()
-
-	service := NewLogicService()
-	ls, _ := service.(*LogicService)
-
-	ad, err := ls.GetBestAd()
-	assert.Nil(t, ad)
-	assert.NotNil(t, err)
-	assert.Equal(t, "no ad was found", err.Error())
+	ls := NewLogicService().(*LogicService)
 
 	ads := []*dto.AdDTO{
-		{ID: 1, Text: "Ad 1", Score: 200.0},
-		{ID: 2, Text: "Ad 2", Score: 100.0},
-		{ID: 3, Text: "Ad 3", Score: 150.0},
+		{ID: 1, Score: 5},
+		{ID: 2, Score: 10},
+		{ID: 3, Score: 7},
 	}
 
-	ls.adsList = ads
-	ls.brakedAdIds = map[uint]struct{}{1: {}, 2: {}, 3: {}}
+	bestAd := ls.bestScoreOn(ads)
+	assert.Equal(t, uint(2), bestAd.ID)
 
-	ad, err = ls.GetBestAd()
-	assert.Nil(t, ad)
-	assert.NotNil(t, err)
-	assert.Equal(t, "no ad was found", err.Error())
+	ads = []*dto.AdDTO{}
+
+	bestAd = ls.bestScoreOn(ads)
+	assert.Nil(t, bestAd)
 }
 
-func TestLogicService_GetBestAd_WithAds(t *testing.T) {
+func TestRandomOn(t *testing.T) {
 	setupEnv()
 
-	service := NewLogicService()
-	ls, _ := service.(*LogicService)
+	ls := NewLogicService().(*LogicService)
 
 	ads := []*dto.AdDTO{
-		{ID: 1, Text: "Ad 1", Score: 200.0},
-		{ID: 2, Text: "Ad 2", Score: 100.0},
-		{ID: 3, Text: "Ad 3", Score: 150.0},
+		{ID: 1},
+		{ID: 2},
+		{ID: 3},
 	}
 
-	ls.adsList = ads
+	randomAd := ls.randomOn(ads)
+	assert.NotNil(t, randomAd)
+
+	ads = []*dto.AdDTO{}
+
+	randomAd = ls.bestScoreOn(ads)
+	assert.Nil(t, randomAd)
+}
+
+func TestValidsOn(t *testing.T) {
+	setupEnv()
+
+	ls := NewLogicService().(*LogicService)
+	ls.brakedAdIds[2] = struct{}{}
+	ls.brakedAdIds[5] = struct{}{}
+	ls.brakedAdIds[6] = struct{}{}
+
+	ads := []*dto.AdDTO{
+		{ID: 1},
+		{ID: 2},
+		{ID: 3},
+		{ID: 4},
+		{ID: 5},
+		{ID: 6},
+	}
+
+	validAds := ls.validsOn(ads)
+	assert.Equal(t, 3, len(validAds))
+	assert.Equal(t, uint(1), validAds[0].ID)
+	assert.Equal(t, uint(3), validAds[1].ID)
+	assert.Equal(t, uint(4), validAds[2].ID)
+}
+
+func TestGetBestAd(t *testing.T) {
+	setupEnv()
+	os.Setenv("UNVISITED_CHANCE", "100")
+
+	ls := NewLogicService().(*LogicService)
+
+	ls.visitedAds = []*dto.AdDTO{
+		{ID: 1, Score: 5},
+	}
+
+	ls.unvisitedAds = []*dto.AdDTO{
+		{ID: 2, Score: 10},
+	}
 
 	bestAd, err := ls.GetBestAd()
-	assert.Nil(t, err)
-	assert.NotNil(t, bestAd)
-	assert.Equal(t, uint(1), bestAd.ID)
-	assert.Equal(t, float64(200), bestAd.Score)
+	assert.NoError(t, err)
+	assert.Equal(t, uint(2), bestAd.ID)
 
-	ls.brakedAdIds = map[uint]struct{}{1: {}}
+	os.Setenv("UNVISITED_CHANCE", "0")
+
 	bestAd, err = ls.GetBestAd()
-	assert.Nil(t, err)
-	assert.NotNil(t, bestAd)
-	assert.Equal(t, uint(3), bestAd.ID)
-	assert.Equal(t, float64(150), bestAd.Score)
+	assert.NoError(t, err)
+	assert.Equal(t, uint(1), bestAd.ID)
 }
 
-func TestLogicService_UpdateAdsList(t *testing.T) {
+func TestUpdateAdsList(t *testing.T) {
 	setupEnv()
 
 	ads := []dto.AdDTO{
-		{ID: 1, Text: "Ad 1", Bid: 100, Impressions: 20, TotalCost: 10},
-		{ID: 2, Text: "Ad 2", Bid: 200, Impressions: 10, TotalCost: 20},
+		{ID: 1, Impressions: 0},
+		{ID: 2, Impressions: 1},
 	}
+	body, _ := json.Marshal(ads)
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(ads)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(body)
 	}))
-	defer server.Close()
+	defer ts.Close()
 
-	service := NewLogicService()
-	ls, _ := service.(*LogicService)
-	ls.getAdsAPIPath = server.URL
+	ls := NewLogicService().(*LogicService)
+	ls.getAdsAPIPath = ts.URL
 
 	err := ls.updateAdsList()
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(ls.adsList))
-	assert.Equal(t, uint(1), ls.adsList[0].ID)
-	assert.Equal(t, uint(2), ls.adsList[1].ID)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(ls.unvisitedAds))
+	assert.Equal(t, 1, len(ls.visitedAds))
 }
 
-func TestLogicService_StartTicker(t *testing.T) {
+func TestStartTicker(t *testing.T) {
 	setupEnv()
 
+	ls := NewLogicService().(*LogicService)
+	ls.interval = 1
+
 	ads := []dto.AdDTO{
-		{ID: 1, Text: "Ad 1", Bid: 100},
-		{ID: 2, Text: "Ad 2", Bid: 200},
+		{ID: 1, Impressions: 0},
+		{ID: 2, Impressions: 1},
 	}
+	body, _ := json.Marshal(ads)
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(ads)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(body)
 	}))
-	defer server.Close()
+	defer ts.Close()
 
-	service := NewLogicService()
-	ls, _ := service.(*LogicService)
-	ls.getAdsAPIPath = server.URL
+	ls.getAdsAPIPath = ts.URL
 
-	// Start the ticker
 	ls.StartTicker()
 
-	// Wait for the ticker to tick at least once
 	time.Sleep(2 * time.Second)
 
-	assert.Equal(t, 2, len(ls.adsList))
-	assert.Equal(t, uint(1), ls.adsList[0].ID)
-	assert.Equal(t, uint(2), ls.adsList[1].ID)
+	assert.Equal(t, 1, len(ls.unvisitedAds))
+	assert.Equal(t, 1, len(ls.visitedAds))
 }
 
-func TestLogicService_BrakeAd(t *testing.T) {
+func TestBrakeAd(t *testing.T) {
+	setupEnv()
+
 	// Define test parameters
 	adId := uint(1)
-	duration := 500 * time.Millisecond
+	duration := 200 * time.Millisecond
 
 	service := NewLogicService()
 	ls, _ := service.(*LogicService)
