@@ -25,7 +25,7 @@ RUN go build -o ${FOLDER_NAME}.out
 
 # FROM registry.docker.ir/golang:1.22.4-alpine
 FROM golang:1.22.4-bullseye
-
+ARG FOLDER_NAME
 ENV APP_HOME /app/${FOLDER_NAME}
 RUN mkdir -p "$APP_HOME"
 WORKDIR "$APP_HOME"
