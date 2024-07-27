@@ -1,5 +1,35 @@
 #!/bin/bash
 
+TARGET_SERVICE=.
+if [ $# -eq 1 ]; then
+    TARGET_SERVICE=$1
+fi
+
+RED='\033[0;31m'
+PURPLE='\033[0;35m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+BOLD=$(tput bold)
+NORMAL=$(tput sgr0)
+
+if [ $1 == help ]; then
+    echo -e """Make sure to give execute permission to the script:
+${BOLD}chmod +x ./tester.sh${NORMAL}
+
+To run all of the tests, run ${BOLD}./tester.sh${NORMAL}
+
+To run tests of a specific service, give the service name as the input:
+${BOLD}./tester.sh adserver${NORMAL}"""
+    exit 0
+fi
+
+if ! [ -d $TARGET_SERVICE ]; then
+  echo -e "${RED}${BOLD}Could not find directory ${TARGET_SERVICE}${NC}${NORMAL}"
+  exit 1
+fi
+
 # Function to check if a directory contains test files
 contains_test_files() {
     if ls "$1"/*_test.go &> /dev/null; then
@@ -9,14 +39,10 @@ contains_test_files() {
     fi
 }
 
-RED='\033[0;31m'
-PURPLE='\033[1;35m'
-GREEN='\033[0;32m'
-BLUE='\033[1;34m'
-NC='\033[0m'
-
 # Function to run tests and log coverage with colored output
 run_tests_with_coverage() {
+    echo -e "${PURPLE}${BOLD}Running tests inside ./${TARGET_SERVICE}${NC}${NORMAL}\n"
+    cd $TARGET_SERVICE
     for dir in $(find . -type d); do
         if contains_test_files "$dir"; then
             echo -e "${BLUE}- Running tests in $dir ${NC}"
