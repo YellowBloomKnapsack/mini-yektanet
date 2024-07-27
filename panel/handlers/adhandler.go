@@ -22,9 +22,8 @@ func GetActiveAds(c *gin.Context) {
 	}
 
 	var adDTOs []dto.AdDTO
-	var impressionsCount int64
 	for _, ad := range ads {
-		_ = database.DB.Model(&models.AdsInteraction{}).Where("ad_id = ? AND type = ?", ad.ID, models.Impression).Count(&impressionsCount)
+		impressionsCount := getImpressionCounts(ad.AdsInteractions)
 		adDTO := dto.AdDTO{
 			ID:                ad.ID,
 			Text:              ad.Text,
@@ -33,8 +32,8 @@ func GetActiveAds(c *gin.Context) {
 			Website:           ad.Website,
 			TotalCost:         ad.TotalCost,
 			BalanceAdvertiser: ad.Advertiser.Balance,
-			Impressions:       int(impressionsCount),
-			Score:             logic.GetScore(ad, int(impressionsCount)),
+			Impressions:       impressionsCount,
+			Score:             logic.GetScore(ad, impressionsCount),
 		}
 		adDTOs = append(adDTOs, adDTO)
 	}
@@ -53,4 +52,14 @@ func NotifyAdsBrake(adId uint) {
 	}
 
 	defer resp.Body.Close()
+}
+
+func getImpressionCounts(adsInteractions []models.AdsInteraction) int {
+	count := 0
+	for _, interaction := range adsInteractions {
+		if interaction.Type == int(models.Impression) {
+			count++
+		}
+	}
+	return count
 }
