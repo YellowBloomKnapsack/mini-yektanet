@@ -29,7 +29,7 @@ func (m *MockLogicService) GetBestAd() (*dto.AdDTO, error) {
 
 func (m *MockLogicService) StartTicker() {}
 
-func (m *MockLogicService) BrakeAd(uint, time.Duration) {}
+func (m *MockLogicService) BrakeAd(uint) {}
 
 type MockTokenHandler struct {
 	GenerateTokenResult string
@@ -113,10 +113,11 @@ func (m *MockLogicService_Brake) GetBestAd() (*dto.AdDTO, error) {
 
 func (m *MockLogicService_Brake) StartTicker() {}
 
-func (m *MockLogicService_Brake) BrakeAd(adId uint, duration time.Duration) {
+func (m *MockLogicService_Brake) BrakeAd(adId uint) {
 	m.BrakeAdCalled = true
 	m.BrakeAdAdId = adId
-	m.BrakeAdDuration = duration
+	brakeSeconds, _ := strconv.Atoi(os.Getenv("BRAKE_DURATION_SECS"))
+	m.BrakeAdDuration = time.Duration(brakeSeconds)*time.Second
 }
 
 // TestBrakeAdHandler tests the BrakeAd handler function
@@ -132,7 +133,6 @@ func TestBrakeAdHandler(t *testing.T) {
 
 	handler := &AdServerHandler{
 		logicService:  mockLogicService,
-		brakeDuration: 1 * time.Second, // Set your test duration here
 	}
 
 	// Register the route and handler
@@ -157,5 +157,5 @@ func TestBrakeAdHandler(t *testing.T) {
 	// Assert that BrakeAd was called with the correct parameters
 	assert.True(t, mockLogicService.BrakeAdCalled, "BrakeAd should have been called")
 	assert.Equal(t, uint(adId), mockLogicService.BrakeAdAdId, "BrakeAd adId should match")
-	assert.Equal(t, handler.brakeDuration, mockLogicService.BrakeAdDuration, "BrakeAd duration should match")
+	// assert.Equal(t, handler.brakeDuration, mockLogicService.BrakeAdDuration, "BrakeAd duration should match")
 }

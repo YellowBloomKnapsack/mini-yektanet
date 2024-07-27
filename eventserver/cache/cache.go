@@ -2,49 +2,80 @@ package cache
 
 import (
 	"context"
+	"os"
 	"log"
 	"time"
 
+	"YellowBloomKnapsack/mini-yektanet/common/cache"
 	"github.com/redis/go-redis/v9"
 )
 
-type CacheInterface interface {
-	IsPresent(token string) bool
-	Add(token string)
+type EventServerCache struct {
+	redisClient    *redis.Client
 }
 
-type CacheService struct {
-	redisClient    redis.Client
-	expireDuration time.Duration
-}
-
-func NewCacheService(expireDuration time.Duration, redisUrl string) CacheInterface {
-	return &CacheService{
-		expireDuration: expireDuration,
-		redisClient: *redis.NewClient(&redis.Options{
-			Addr:     redisUrl,
-			Password: "", // no password set
-			DB:       0,  // use default DB
+func NewEventServerCache(redisUrl string) cache.CacheInterface {
+	r := &EventServerCache{
+		redisClient: redis.NewClient(&redis.Options{
+			Addr:	  redisUrl,
+        	Password: "", // no password set
+        	DB:		  0,  // use default DB
 		}),
 	}
+
+	ctx := context.Background()
+	initialSize := os.Getenv("REDIS_BF_INIT_SIZE") // initial capacity of the Bloom filter
+	errorRate := os.Getenv("REDIS_BF_ERR_RATE") // false positive rate
+	_, err := r.redisClient.Do(ctx, "BF.RESERVE", bfTableName(), errorRate, initialSize).Result()
+	if err != nil {
+		log.Printf("Error recreating Bloom filter: %v", err)
+	}
+	go bfResetService(r) // background service to reset bloom filter database 
+	return r
 }
 
-func (r *CacheService) IsPresent(token string) bool {
+func (r *EventServerCache) IsPresent(token string) bool {
 	ctx := context.Background()
-	present, err := r.redisClient.Exists(ctx, token).Result()
+	// check with bloom filter
+	exists, err := r.redisClient.Do(ctx, "BF.EXISTS", bfTableName(), token).Bool()
+	// exists, err := r.redisClient.BFExists(ctx, bfTableName(), token).Result()
 	if err != nil {
-		log.Print(err)
-		return false
+		log.Println(err)
+		return true
 	}
 
-	return (present == 1)
+	return exists
 }
 
-func (r *CacheService) Add(token string) {
+func (r *EventServerCache) Add(token string) {
 	ctx := context.Background()
-	err := r.redisClient.Set(ctx, token, true, r.expireDuration).Err()
 
+	// add to bloom filter
+	_, err := r.redisClient.Do(ctx, "BF.ADD", bfTableName(), token).Bool()
 	if err != nil {
-		log.Print(err)
+		log.Println(err)
 	}
+}
+
+func bfResetService(r *EventServerCache) {
+	for {
+		now := time.Now()
+		nextDay := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
+		durationUntilReset := nextDay.Sub(now)
+		time.Sleep(durationUntilReset)
+
+		ctx := context.Background()
+		
+		initialSize := os.Getenv("REDIS_BF") // initial capacity of the Bloom filter
+		errorRate := 0.01      // false positive rate
+
+		_, err := r.redisClient.Do(ctx, "BF.RESERVE", bfTableName(), errorRate, initialSize).Result()
+		if err != nil {
+			log.Fatalf("Error recreating Bloom filter: %v", err)
+		}
+	}
+}
+
+func bfTableName() string {
+	return "bf_token_"//+time.Now().Format("2006.01.02")
 }

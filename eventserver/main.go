@@ -3,8 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"strconv"
-	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
 	"YellowBloomKnapsack/mini-yektanet/eventserver/cache"
@@ -23,17 +21,23 @@ func main() {
 
 	// Initialize the cache service
 	redisUrl := os.Getenv("REDIS_URL")
-	redisExpireHourStr := os.Getenv("REDIS_EXPIRE_HOUR")
-	redisExpireHour, err := strconv.Atoi(redisExpireHourStr)
-	if err != nil {
-		log.Fatalf("Invalid REDIS_EXPIRE_HOUR value: %v", err)
-	}
-	cacheService := cache.NewCacheService(time.Duration(redisExpireHour)*time.Hour, redisUrl)
+
+	cache := cache.NewEventServerCache(redisUrl)
+	
+	handler := handlers.NewEventServerHandler(tokenHandler, worker, cache)
+
+// 	redisExpireHourStr := os.Getenv("REDIS_EXPIRE_HOUR")
+// 	redisExpireHour, err := strconv.Atoi(redisExpireHourStr)
+// 	if err != nil {
+// 		log.Fatalf("Invalid REDIS_EXPIRE_HOUR value: %v", err)
+// 	}
+// 	cacheService := cache.NewCacheService(time.Duration(redisExpireHour)*time.Hour, redisUrl)
 
 	// Initialize the event server handler
 	handler := handlers.NewEventServerHandler(tokenHandler, cacheService)
 
 	// Initialize the Gin router
+
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
