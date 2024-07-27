@@ -15,7 +15,7 @@ import (
 )
 
 func setupEnv() {
-	os.Setenv("HOSTNAME", "localhost")
+	os.Setenv("PANEL_HOSTNAME", "localhost")
 	os.Setenv("PANEL_PORT", "8080")
 	os.Setenv("GET_ADS_API", "/ads")
 	os.Setenv("ADS_FETCH_INTERVAL_SECS", "1")

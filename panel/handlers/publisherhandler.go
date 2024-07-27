@@ -163,6 +163,6 @@ func generateScript(publisherName string) string {
 	if err != nil {
 		return "error generating the script"
 	}
-	adServerAPILink := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("AD_SERVER_PORT")
+	adServerAPILink := "http://" + os.Getenv("AD_SERVER_HOSTNAME") + ":" + os.Getenv("AD_SERVER_PORT")
 	return fmt.Sprintf(string(content), publisherName, adServerAPILink)
 }

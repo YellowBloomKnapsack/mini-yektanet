@@ -29,11 +29,11 @@ func main() {
 	}))
 
 	r.GET("/:publisherUsername", handler.GetAd)
-	r.POST(os.Getenv("NOTIFY_API_PATH") + "/:adId", handler.BrakeAd)
+	r.POST(os.Getenv("NOTIFY_API_PATH")+"/:adId", handler.BrakeAd)
 
 	port := os.Getenv("AD_SERVER_PORT")
 	if port == "" {
 		port = "8081"
 	}
-	r.Run(os.Getenv("HOSTNAME") + ":" + port)
+	r.Run(os.Getenv("AD_SERVER_HOSTNAME") + ":" + port)
 }

@@ -1,18 +1,18 @@
 package handlers
 
 import (
-	"os"
-	"testing"
-	"log"
-	"reflect"
-	"io/ioutil"
-	"net/http"
 	"encoding/json"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
+	"reflect"
+	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
@@ -23,16 +23,16 @@ const host string = "localhost:8090"
 
 func TestGetActiveAdsErrorNoDB(t *testing.T) {
 	setEnvVariables()
-	
+
 	database.InitTestDB() // init the database (so database.DB - being used in adHandler - is not nil)
 	db, _ := database.DB.DB()
-	db.Close() // close database connection for the sake of testing	
+	db.Close() // close database connection for the sake of testing
 
 	r := gin.Default()
 	r.GET("/", GetActiveAds)
 	go r.Run(host) // the router needs to run in another goroutine
 
-	resp, err := http.Get("http://"+host)
+	resp, err := http.Get("http://" + host)
 
 	// for testing purposes:
 	// t.Log("\n\n\n\n\n\n\n")
@@ -48,18 +48,18 @@ func TestGetActiveAdsSuccessGetAllAds(t *testing.T) {
 
 	database.InitTestDB()
 
-	r := gin.Default()	
+	r := gin.Default()
 	r.GET("/", GetActiveAds)
-	go r.Run(host) // the router needs to run in another goroutine	
+	go r.Run(host) // the router needs to run in another goroutine
 
-	resp, err := http.Get("http://"+host)
+	resp, err := http.Get("http://" + host)
 
 	require.NoError(t, err, "expected no error after making the request")
-	
+
 	// for testing purposes:
 	// t.Log("\n\n\n\n\n\n\n")
 	// t.Logf("%+v", resp)
-	// t.Log("\n\n\n\n\n\n\n")	
+	// t.Log("\n\n\n\n\n\n\n")
 	// t.Logf("\n\n\n%T\n", resp.Body)
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -82,7 +82,7 @@ func TestGetActiveAdsSuccessGetAllAds(t *testing.T) {
 		adDTO := dto.AdDTO{
 			ID:        ad.ID,
 			Text:      ad.Text,
-			ImagePath: "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + ad.ImagePath,
+			ImagePath: "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + ad.ImagePath,
 			Bid:       ad.Bid,
 			Website:   ad.Website,
 		}
@@ -98,3 +98,4 @@ func setEnvVariables() {
 		log.Fatal("Error loading .env file")
 	}
 }
+

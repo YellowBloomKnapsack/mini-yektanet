@@ -1,14 +1,14 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"testing"
-	"encoding/base64"
-	"time"
 	"strconv"
+	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -46,7 +46,7 @@ func (m *MockTokenHandler) VerifyToken(encryptedToken string, key []byte) (*dto.
 
 func setupEnv() {
 	os.Setenv("EVENT_SERVER_PORT", "8080")
-	os.Setenv("HOSTNAME", "localhost")
+	os.Setenv("EVENT_SERVER_HOSTNAME", "localhost")
 	os.Setenv("CLICK_REQ_PATH", "click")
 	os.Setenv("IMPRESSION_REQ_PATH", "impression")
 	os.Setenv("PRIVATE_KEY", base64.StdEncoding.EncodeToString([]byte("mysecretkey123456")))
@@ -102,9 +102,9 @@ func TestGetAd(t *testing.T) {
 }
 
 type MockLogicService_Brake struct {
-	BrakeAdCalled    bool
-	BrakeAdAdId      uint
-	BrakeAdDuration  time.Duration
+	BrakeAdCalled   bool
+	BrakeAdAdId     uint
+	BrakeAdDuration time.Duration
 }
 
 func (m *MockLogicService_Brake) GetBestAd() (*dto.AdDTO, error) {

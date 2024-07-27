@@ -2,14 +2,14 @@ package main
 
 import (
 	"log"
-	"time"
-	"strconv"
 	"os"
+	"strconv"
+	"time"
 
+	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
 	"YellowBloomKnapsack/mini-yektanet/eventserver/cache"
 	"YellowBloomKnapsack/mini-yektanet/eventserver/handlers"
 	"YellowBloomKnapsack/mini-yektanet/eventserver/worker"
-	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -27,8 +27,8 @@ func main() {
 	redisUrl := os.Getenv("REDIS_URL")
 	redisExpireHour, _ := strconv.Atoi("REDIS_EXPIRE_HOUR")
 
-	cache := cache.NewCacheService(time.Duration(redisExpireHour) * time.Hour, redisUrl)
-	
+	cache := cache.NewCacheService(time.Duration(redisExpireHour)*time.Hour, redisUrl)
+
 	handler := handlers.NewEventServerHandler(tokenHandler, worker, cache)
 	r := gin.Default()
 
@@ -44,5 +44,5 @@ func main() {
 	if port == "" {
 		port = "8082"
 	}
-	r.Run(os.Getenv("HOSTNAME") + ":" + port)
+	r.Run(os.Getenv("EVENT_SERVER_HOSTNAME") + ":" + port)
 }

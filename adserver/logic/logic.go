@@ -30,7 +30,7 @@ func NewLogicService() LogicInterface {
 	return &LogicService{
 		adsList:       make([]*dto.AdDTO, 0),
 		brakedAdIds:   make(map[uint]struct{}, 0),
-		getAdsAPIPath: "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API"),
+		getAdsAPIPath: "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API"),
 		interval:      interval,
 	}
 }
