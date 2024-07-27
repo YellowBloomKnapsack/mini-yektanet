@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -17,17 +16,14 @@ import (
 type AdServerHandler struct {
 	logicService  logic.LogicInterface
 	tokenHandler  tokenhandler.TokenHandlerInterface
-	brakeDuration time.Duration
 }
 
 func NewAdServerHandler(logicService logic.LogicInterface, tokenHandler tokenhandler.TokenHandlerInterface) *AdServerHandler {
 	logicService.StartTicker()
-	brakeDuration, _ := strconv.Atoi(os.Getenv("BRAKE_DURATION_SECS"))
 
 	return &AdServerHandler{
 		logicService:  logicService,
 		tokenHandler:  tokenHandler,
-		brakeDuration: time.Duration(brakeDuration) * time.Second,
 	}
 }
 
@@ -70,5 +66,5 @@ func (h *AdServerHandler) BrakeAd(c *gin.Context) {
 		return
 	}
 
-	h.logicService.BrakeAd(uint(adId), h.brakeDuration)
+	h.logicService.BrakeAd(uint(adId))
 }

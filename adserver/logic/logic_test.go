@@ -1,29 +1,51 @@
 package logic
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
+	"strconv"
 	"os"
 	"testing"
 	"time"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 
 	"github.com/stretchr/testify/assert"
 )
 
+// Mock CacheService
+type MockCacheService struct {
+	mark map[string]interface{}
+}
+
+func (m *MockCacheService) IsPresent(token string) bool {
+	_, ok := m.mark[token]
+	return ok
+}
+
+func (m *MockCacheService) Add(token string) {
+	m.mark[token] = ""
+	go func() {
+		brakeSeconds, _ := strconv.Atoi(os.Getenv("BRAKE_DURATION_SECS"))
+		time.Sleep(time.Duration(brakeSeconds))
+		delete(m.mark, token)
+	}()
+}
+
 func setupEnv() {
 	os.Setenv("PANEL_HOSTNAME", "localhost")
 	os.Setenv("PANEL_PORT", "8080")
 	os.Setenv("GET_ADS_API", "/ads")
 	os.Setenv("ADS_FETCH_INTERVAL_SECS", "1")
+	os.Setenv("BRAKE_DURATION_SECS", "5")
 }
 
 func TestBestScoreOn(t *testing.T) {
 	setupEnv()
 
-	ls := NewLogicService().(*LogicService)
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
 
 	ads := []*dto.AdDTO{
 		{ID: 1, Score: 5},
@@ -43,7 +65,8 @@ func TestBestScoreOn(t *testing.T) {
 func TestRandomOn(t *testing.T) {
 	setupEnv()
 
-	ls := NewLogicService().(*LogicService)
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
 
 	ads := []*dto.AdDTO{
 		{ID: 1},
@@ -63,10 +86,11 @@ func TestRandomOn(t *testing.T) {
 func TestValidsOn(t *testing.T) {
 	setupEnv()
 
-	ls := NewLogicService().(*LogicService)
-	ls.brakedAdIds[2] = struct{}{}
-	ls.brakedAdIds[5] = struct{}{}
-	ls.brakedAdIds[6] = struct{}{}
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
+	ls.brakedAdsCache.Add("2")
+	ls.brakedAdsCache.Add("5")
+	ls.brakedAdsCache.Add("6")
 
 	ads := []*dto.AdDTO{
 		{ID: 1},
@@ -98,7 +122,8 @@ func TestUpdateAdsList(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	ls := NewLogicService().(*LogicService)
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
 	ls.getAdsAPIPath = ts.URL
 
 	err := ls.updateAdsList()
@@ -110,7 +135,8 @@ func TestUpdateAdsList(t *testing.T) {
 func TestStartTicker(t *testing.T) {
 	setupEnv()
 
-	ls := NewLogicService().(*LogicService)
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
 	ls.interval = 1
 
 	ads := []dto.AdDTO{
@@ -141,13 +167,14 @@ func TestBrakeAd(t *testing.T) {
 	adId := uint(1)
 	duration := 200 * time.Millisecond
 
-	service := NewLogicService()
+	cache := &MockCacheService{make(map[string]interface{})}
+	service := NewLogicService(cache)
 	ls, _ := service.(*LogicService)
 
-	ls.BrakeAd(adId, duration)
+	ls.BrakeAd(adId)
 
 	// Check if adId is added to the map
-	if _, found := ls.brakedAdIds[adId]; !found {
+	if !ls.brakedAdsCache.IsPresent(strconv.FormatUint(uint64(adId), 10)) {
 		t.Errorf("expected adId %d to be in the map", adId)
 		return
 	}
@@ -156,14 +183,15 @@ func TestBrakeAd(t *testing.T) {
 	time.Sleep(duration + 100*time.Millisecond)
 
 	// Check if adId is removed from the map
-	if _, found := ls.brakedAdIds[adId]; found {
+	if ls.brakedAdsCache.IsPresent(strconv.FormatUint(uint64(adId), 10)) {
 		t.Errorf("expected adId %d to be removed from the map", adId)
 		return
 	}
 }
 
 func TestGetBestAd_NoAdsAvailable(t *testing.T) {
-	ls := NewLogicService().(*LogicService)
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
 
 	_, err := ls.GetBestAd()
 	assert.Error(t, err)
@@ -173,7 +201,8 @@ func TestGetBestAd_NoAdsAvailable(t *testing.T) {
 func TestGetBestAd_OnlyUnvisitedAdsAvailable(t *testing.T) {
 	os.Setenv("UNVISITED_CHANCE", "100")
 
-	ls := NewLogicService().(*LogicService)
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
 	ls.unvisitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 		{ID: 2, Score: 10},
@@ -185,7 +214,8 @@ func TestGetBestAd_OnlyUnvisitedAdsAvailable(t *testing.T) {
 }
 
 func TestGetBestAd_OnlyVisitedAdsAvailable(t *testing.T) {
-	ls := NewLogicService().(*LogicService)
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
 	ls.visitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 		{ID: 2, Score: 10},
@@ -199,7 +229,8 @@ func TestGetBestAd_OnlyVisitedAdsAvailable(t *testing.T) {
 func TestGetBestAd_BothAdsAvailable_UnvisitedChance100(t *testing.T) {
 	os.Setenv("UNVISITED_CHANCE", "100")
 
-	ls := NewLogicService().(*LogicService)
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
 	ls.visitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 	}
@@ -215,7 +246,8 @@ func TestGetBestAd_BothAdsAvailable_UnvisitedChance100(t *testing.T) {
 func TestGetBestAd_BothAdsAvailable_UnvisitedChance0(t *testing.T) {
 	os.Setenv("UNVISITED_CHANCE", "0")
 
-	ls := NewLogicService().(*LogicService)
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
 	ls.visitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 	}
@@ -231,14 +263,15 @@ func TestGetBestAd_BothAdsAvailable_UnvisitedChance0(t *testing.T) {
 func TestGetBestAd_ValidUnvisitedAdsAvailable(t *testing.T) {
 	os.Setenv("UNVISITED_CHANCE", "100")
 
-	ls := NewLogicService().(*LogicService)
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
 	ls.unvisitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 		{ID: 2, Score: 10},
 	}
 
 	// Braking one of the ads to make it invalid
-	ls.BrakeAd(1, 1*time.Minute)
+	ls.BrakeAd(1)
 
 	bestAd, err := ls.GetBestAd()
 	assert.NoError(t, err)
@@ -246,14 +279,15 @@ func TestGetBestAd_ValidUnvisitedAdsAvailable(t *testing.T) {
 }
 
 func TestGetBestAd_ValidVisitedAdsAvailable(t *testing.T) {
-	ls := NewLogicService().(*LogicService)
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
 	ls.visitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 		{ID: 2, Score: 10},
 	}
 
 	// Braking one of the ads to make it invalid
-	ls.BrakeAd(2, 1*time.Minute)
+	ls.BrakeAd(2)
 
 	bestAd, err := ls.GetBestAd()
 	assert.NoError(t, err)
@@ -263,7 +297,8 @@ func TestGetBestAd_ValidVisitedAdsAvailable(t *testing.T) {
 func TestGetBestAd_ValidUnvisitedAndVisitedAdsAvailable(t *testing.T) {
 	os.Setenv("UNVISITED_CHANCE", "50")
 
-	ls := NewLogicService().(*LogicService)
+	cache := &MockCacheService{make(map[string]interface{})}
+	ls := NewLogicService(cache).(*LogicService)
 	ls.visitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 	}
@@ -272,7 +307,7 @@ func TestGetBestAd_ValidUnvisitedAndVisitedAdsAvailable(t *testing.T) {
 	}
 
 	// Braking the unvisited ad to make it invalid
-	ls.BrakeAd(2, 1*time.Minute)
+	ls.BrakeAd(2)
 
 	bestAd, err := ls.GetBestAd()
 	assert.NoError(t, err)

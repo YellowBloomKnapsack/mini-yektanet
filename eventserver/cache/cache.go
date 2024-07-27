@@ -37,8 +37,8 @@ func NewEventServerCache(redisUrl string) cache.CacheInterface {
 func (r *EventServerCache) IsPresent(token string) bool {
 	ctx := context.Background()
 	// check with bloom filter
-	// exists, err := r.redisClient.Do(ctx, "BF.EXISTS", bfTableName(), token).Bool()
-	exists, err := r.redisClient.BFExists(ctx, bfTableName(), token).Result()
+	exists, err := r.redisClient.Do(ctx, "BF.EXISTS", bfTableName(), token).Bool()
+	// exists, err := r.redisClient.BFExists(ctx, bfTableName(), token).Result()
 	if err != nil {
 		log.Println(err)
 		return true
@@ -74,4 +74,8 @@ func bfResetService(r *EventServerCache) {
 			log.Fatalf("Error recreating Bloom filter: %v", err)
 		}
 	}
+}
+
+func bfTableName() string {
+	return "bf_token_"//+time.Now().Format("2006.01.02")
 }

@@ -11,28 +11,29 @@ import (
 	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
+	"YellowBloomKnapsack/mini-yektanet/common/cache"
 )
 
 type LogicInterface interface {
 	GetBestAd() (*dto.AdDTO, error)
 	StartTicker()
-	BrakeAd(adId uint, duration time.Duration)
+	BrakeAd(adId uint)
 }
 
 type LogicService struct {
 	visitedAds    []*dto.AdDTO
 	unvisitedAds  []*dto.AdDTO
-	brakedAdIds   map[uint]struct{}
+	brakedAdsCache cache.CacheInterface
 	getAdsAPIPath string
 	interval      int
 }
 
-func NewLogicService() LogicInterface {
+func NewLogicService(cache cache.CacheInterface) LogicInterface {
 	interval, _ := strconv.Atoi(os.Getenv("ADS_FETCH_INTERVAL_SECS"))
 	return &LogicService{
 		visitedAds:    make([]*dto.AdDTO, 0),
 		unvisitedAds:  make([]*dto.AdDTO, 0),
-		brakedAdIds:   make(map[uint]struct{}, 0),
+		brakedAdsCache: cache,
 		getAdsAPIPath: "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API"),
 		interval:      interval,
 	}
@@ -66,8 +67,7 @@ func (ls *LogicService) randomOn(ads []*dto.AdDTO) *dto.AdDTO {
 }
 
 func (ls *LogicService) isValid(ad *dto.AdDTO) bool {
-	_, ok := ls.brakedAdIds[ad.ID]
-	return !ok
+	return !ls.brakedAdsCache.IsPresent(strconv.FormatUint(uint64(ad.ID), 10))
 }
 
 func (ls *LogicService) validsOn(ads []*dto.AdDTO) []*dto.AdDTO {
@@ -166,12 +166,6 @@ func (ls *LogicService) StartTicker() {
 	}()
 }
 
-func (ls *LogicService) BrakeAd(adId uint, duration time.Duration) {
-	ls.brakedAdIds[adId] = struct{}{}
-
-	// Start a new goroutine to remove the adId after the specified duration
-	go func() {
-		time.Sleep(duration)
-		delete(ls.brakedAdIds, adId)
-	}()
+func (ls *LogicService) BrakeAd(adId uint) {
+	ls.brakedAdsCache.Add(strconv.FormatUint(uint64(adId), 10))
 }
