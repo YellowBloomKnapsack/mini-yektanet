@@ -10,7 +10,7 @@ import (
 
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
 	"YellowBloomKnapsack/mini-yektanet/eventserver/worker"
-	"YellowBloomKnapsack/mini-yektanet/eventserver/cache"
+	"YellowBloomKnapsack/mini-yektanet/common/cache"
 )
 
 type EventServerHandler struct {

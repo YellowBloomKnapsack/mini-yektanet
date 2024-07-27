@@ -2,8 +2,6 @@ package main
 
 import (
 	"log"
-	"time"
-	"strconv"
 	"os"
 
 	"YellowBloomKnapsack/mini-yektanet/eventserver/cache"
@@ -25,9 +23,8 @@ func main() {
 	worker := worker.NewWorkerService()
 
 	redisUrl := os.Getenv("REDIS_URL")
-	redisExpireHour, _ := strconv.Atoi("REDIS_EXPIRE_HOUR")
 
-	cache := cache.NewCacheService(time.Duration(redisExpireHour) * time.Hour, redisUrl)
+	cache := cache.NewEventServerCache(redisUrl)
 	
 	handler := handlers.NewEventServerHandler(tokenHandler, worker, cache)
 	r := gin.Default()
