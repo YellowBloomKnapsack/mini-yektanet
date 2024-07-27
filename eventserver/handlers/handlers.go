@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gin-gonic/gin"
+	"github.com/golang/protobuf/proto"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
@@ -122,17 +122,16 @@ func (h *EventServerHandler) PostImpression(c *gin.Context) {
 
 // produceClickEvent sends a click event to the Kafka topic.
 func (h *EventServerHandler) produceClickEvent(data *dto.CustomToken, clickTime time.Time) error {
-	eventData := map[string]interface{}{
-		"publisher_username": data.PublisherUsername,
-		"event_time":         clickTime.Format(time.RFC3339),
-		"ad_id":              data.AdID,
+	eventData := &dto.ClickEvent{
+		PublisherUsername: data.PublisherUsername,
+		EventTime:         clickTime.Format(time.RFC3339),
+		AdId:              uint32(data.AdID),
 	}
 
-	//todo protpfile
-
-	jsonData, err := json.Marshal(eventData)
+	// Marshal to Protobuf
+	protoData, err := proto.Marshal(eventData)
 	if err != nil {
-		fmt.Printf("Failed to marshal click event to JSON: %v\n", err)
+		fmt.Printf("Failed to marshal click event to protobuf: %v\n", err)
 		return err
 	}
 
@@ -142,7 +141,7 @@ func (h *EventServerHandler) produceClickEvent(data *dto.CustomToken, clickTime 
 
 	err = h.kafkaProducer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &h.kafkaTopicClick, Partition: kafka.PartitionAny},
-		Value:          jsonData,
+		Value:          protoData,
 	}, deliveryChan)
 
 	if err != nil {
@@ -165,16 +164,16 @@ func (h *EventServerHandler) produceClickEvent(data *dto.CustomToken, clickTime 
 
 // produceImpressionEvent sends an impression event to the Kafka topic.
 func (h *EventServerHandler) produceImpressionEvent(data *dto.CustomToken, impressionTime time.Time) error {
-	eventData := map[string]interface{}{
-		"publisher_username": data.PublisherUsername,
-		"event_time":         impressionTime.Format(time.RFC3339),
-		"ad_id":              data.AdID,
+	eventData := &dto.ImpressionEvent{
+		PublisherUsername: data.PublisherUsername,
+		EventTime:         impressionTime.Format(time.RFC3339),
+		AdId:              uint32(data.AdID),
 	}
 
-	// proto
-	jsonData, err := json.Marshal(eventData)
+	// Marshal to Protobuf
+	protoData, err := proto.Marshal(eventData)
 	if err != nil {
-		fmt.Printf("Failed to marshal impression event to JSON: %v\n", err)
+		fmt.Printf("Failed to marshal impression event to protobuf: %v\n", err)
 		return err
 	}
 
@@ -184,7 +183,7 @@ func (h *EventServerHandler) produceImpressionEvent(data *dto.CustomToken, impre
 
 	err = h.kafkaProducer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &h.kafkaTopicImpression, Partition: kafka.PartitionAny},
-		Value:          jsonData,
+		Value:          protoData,
 	}, deliveryChan)
 
 	if err != nil {
