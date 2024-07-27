@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand/v2"
 	"net/http"
 	"os"
 	"strconv"
@@ -19,7 +20,8 @@ type LogicInterface interface {
 }
 
 type LogicService struct {
-	adsList       []*dto.AdDTO
+	visitedAds    []*dto.AdDTO
+	unvisitedAds  []*dto.AdDTO
 	brakedAdIds   map[uint]struct{}
 	getAdsAPIPath string
 	interval      int
@@ -28,9 +30,10 @@ type LogicService struct {
 func NewLogicService() LogicInterface {
 	interval, _ := strconv.Atoi(os.Getenv("ADS_FETCH_INTERVAL_SECS"))
 	return &LogicService{
-		adsList:       make([]*dto.AdDTO, 0),
+		visitedAds:    make([]*dto.AdDTO, 0),
+		unvisitedAds:  make([]*dto.AdDTO, 0),
 		brakedAdIds:   make(map[uint]struct{}, 0),
-		getAdsAPIPath: "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API"),
+		getAdsAPIPath: "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API"),
 		interval:      interval,
 	}
 }
@@ -39,44 +42,68 @@ func (ls *LogicService) isBetterThan(lhs, rhs *dto.AdDTO) bool {
 	return rhs.Score > lhs.Score
 }
 
-func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
-	if len(ls.adsList) == 0 {
-		return nil, fmt.Errorf("no ad was found")
+func (ls *LogicService) bestScoreOn(ads []*dto.AdDTO) *dto.AdDTO {
+	if len(ads) == 0 {
+		return nil
 	}
 
-	index := 0
-	for index = 0; index < len(ls.adsList); index++ {
-		_, ok := ls.brakedAdIds[ls.adsList[index].ID]
-		if !ok {
-			break
-		}
-	}
-
-	if index == len(ls.adsList) {
-		return nil, fmt.Errorf("no ad was found")
-	}
-	bestAd := ls.adsList[index]
-	anyValidMap := false
-
-	for i := index; i < len(ls.adsList); i++ {
-		ad := ls.adsList[i]
-		_, ok := ls.brakedAdIds[ad.ID]
-		if ok {
-			continue
-		}
-		anyValidMap = true
-
+	bestAd := ads[0]
+	for _, ad := range ads {
 		if ls.isBetterThan(bestAd, ad) {
 			bestAd = ad
 		}
 	}
 
-	if anyValidMap {
-		return bestAd, nil
-	} else {
+	return bestAd
+}
+
+func (ls *LogicService) randomOn(ads []*dto.AdDTO) *dto.AdDTO {
+	if len(ads) == 0 {
+		return nil
+	}
+
+	return ads[rand.IntN(len(ads))]
+}
+
+func (ls *LogicService) isValid(ad *dto.AdDTO) bool {
+	_, ok := ls.brakedAdIds[ad.ID]
+	return !ok
+}
+
+func (ls *LogicService) validsOn(ads []*dto.AdDTO) []*dto.AdDTO {
+	result := make([]*dto.AdDTO, 0)
+	for _, ad := range ads {
+		if ls.isValid(ad) {
+			result = append(result, ad)
+		}
+	}
+
+	return result
+}
+
+func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
+	validVisitedsAds := ls.validsOn(ls.visitedAds)
+	validUnvisitedsAds := ls.validsOn(ls.unvisitedAds)
+
+	if len(validUnvisitedsAds) == 0 && len(validVisitedsAds) == 0 {
 		return nil, fmt.Errorf("no ad was found")
 	}
 
+	if len(validUnvisitedsAds) == 0 {
+		return ls.bestScoreOn(validVisitedsAds), nil
+	}
+
+	if len(validVisitedsAds) == 0 {
+		return ls.randomOn(validUnvisitedsAds), nil
+	}
+
+	randomNumber := rand.Float32()
+	unvisitedChance, _ := strconv.Atoi(os.Getenv("UNVISITED_CHANCE"))
+	if randomNumber < float32(unvisitedChance)/100.0 {
+		return ls.randomOn(validUnvisitedsAds), nil
+	} else {
+		return ls.bestScoreOn(validVisitedsAds), nil
+	}
 }
 
 func (ls *LogicService) updateAdsList() error {
@@ -102,13 +129,22 @@ func (ls *LogicService) updateAdsList() error {
 		return fmt.Errorf("failed to unmarshal ads: %v", err)
 	}
 
-	var newAdsList []*dto.AdDTO
+	var newVisitedAds []*dto.AdDTO
+	var newUnvisitedAds []*dto.AdDTO
 	for _, ad := range ads {
-		newAdsList = append(newAdsList, &ad)
+		if ad.Impressions == 0 {
+			newUnvisitedAds = append(newUnvisitedAds, &ad)
+		} else {
+			newVisitedAds = append(newVisitedAds, &ad)
+		}
 	}
 
-	fmt.Printf("%d new ads were fetched.\n", len(newAdsList)-len(ls.adsList))
-	ls.adsList = newAdsList
+	old_len := len(ls.unvisitedAds) + len(ls.visitedAds)
+	new_len := len(newUnvisitedAds) + len(newVisitedAds)
+	fmt.Printf("%d new ads were fetched.\n", new_len-old_len)
+
+	ls.visitedAds = newVisitedAds
+	ls.unvisitedAds = newUnvisitedAds
 
 	return nil
 }

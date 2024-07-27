@@ -1,10 +1,10 @@
-package cache 
+package cache
 
 import (
-	"time"
-	"log"
 	"context"
 	"os"
+	"log"
+	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/cache"
 	"github.com/redis/go-redis/v9"
@@ -74,23 +74,4 @@ func bfResetService(r *EventServerCache) {
 			log.Fatalf("Error recreating Bloom filter: %v", err)
 		}
 	}
-}
-
-func reset(r *EventServerCache) {
-	// err := r.redisClient.Del(ctx, "bf_token")
-	// if err != nil {
-	// 	log.Println("Error deleting bloom filter")
-	// }
-
-	initialSize := os.Getenv("REDIS_BF_INIT_SIZE") // initial capacity of the Bloom filter
-	errorRate := os.Getenv("REDIS_BF_ERR_RATE") // false positive rate
-	ctx := context.Background()
-	_, err := r.redisClient.Do(ctx, bfTableName, errorRate, initialSize).Result()
-	if err != nil {
-		log.Fatalf("Error recreating Bloom filter: %v", err)
-	}
-}
-
-func bfTableName() string {
-	return "bf_token_"//+time.Now().Format("2006.01.02")
 }

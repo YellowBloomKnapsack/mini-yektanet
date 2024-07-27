@@ -2,12 +2,12 @@ package main
 
 import (
 	"log"
-	"os"
 	"net/http"
+	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/gin-contrib/cors"
 )
 
 var currentSiteNames []string
@@ -20,7 +20,7 @@ func main() {
 	currentSiteNames = []string{
 		"varzesh3",
 		"zoomit",
-		"digikala",	
+		"digikala",
 		"sheypoor",
 		"filimo",
 	}
@@ -37,12 +37,12 @@ func main() {
 	if port == "" {
 		port = "8084"
 	}
-	r.Run(os.Getenv("HOSTNAME") + ":" + port)
+	r.Run(os.Getenv("PUBLISHER_WEBSITE_HOSTNAME") + ":" + port)
 }
 
 func getSite(c *gin.Context) {
 	siteName := c.Param("siteName")
-	for _, name := range(currentSiteNames) {
+	for _, name := range currentSiteNames {
 		if siteName == name {
 			c.HTML(http.StatusOK, siteName+".html", gin.H{
 				"title": siteName,

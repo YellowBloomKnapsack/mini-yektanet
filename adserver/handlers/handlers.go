@@ -39,7 +39,7 @@ func (h *AdServerHandler) GetAd(c *gin.Context) {
 	}
 
 	eventServerPort := os.Getenv("EVENT_SERVER_PORT")
-	hostName := os.Getenv("HOSTNAME")
+	hostName := os.Getenv("EVENT_SERVER_HOSTNAME")
 	eventServerURL := "http://" + hostName + ":" + eventServerPort
 
 	clickReqPath := os.Getenv("CLICK_REQ_PATH")

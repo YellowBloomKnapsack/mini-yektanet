@@ -28,7 +28,7 @@ type WorkerService struct {
 }
 
 func NewWorkerService() WorkerInterface {
-	baseUrl := "http://" + os.Getenv("HOSTNAME") + ":" + os.Getenv("PANEL_PORT")
+	baseUrl := "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT")
 	clickBuffSize, _ := strconv.Atoi(os.Getenv("CLICK_BUFF_SIZE"))
 	impressionBuffSize, _ := strconv.Atoi(os.Getenv("IMPRESSION_BUFF_SIZE"))
 
@@ -37,7 +37,7 @@ func NewWorkerService() WorkerInterface {
 		impressionEvents:   make(chan ImpressionEvent, impressionBuffSize),
 		clickApiUrl:        baseUrl + os.Getenv("INTERACTION_CLICK_API"),
 		impressionApiUrl:   baseUrl + os.Getenv("INTERACTION_IMPRESSION_API"),
-		clickBuffSize:          clickBuffSize,
+		clickBuffSize:      clickBuffSize,
 		impressionBuffSize: impressionBuffSize,
 	}
 }
