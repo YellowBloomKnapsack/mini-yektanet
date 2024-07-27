@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  panel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - FOLDER_NAME=panel
+    ports:
+      - "8083:8083"
+    env_file:
+      - ./panel/.env
+    volumes:
+      - "panel_static:/app/panel/static"
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: 'postgres:15.7-alpine'
+    environment:
+      - 'POSTGRES_DB=?'
+      - 'POSTGRES_USER=?'
+      - 'POSTGRES_PASSWORD=?'
+    ports:
+      - '5433:5432'
+    restart: unless-stopped
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "db_prod" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+volumes:
+  panel_static:
+  postgres_data:
