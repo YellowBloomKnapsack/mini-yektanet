@@ -4,7 +4,8 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"YellowBloomKnapsack/mini-yektanet/common/dto"
+	"YellowBloomKnapsack/mini-yektanet/common/models"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +15,7 @@ func TestGenerateToken_Success(t *testing.T) {
 	th := NewTokenHandlerService()
 	key, _ := base64.StdEncoding.DecodeString(privateKey)
 
-	interaction := dto.ClickType
+	interaction := models.Click
 	adID := uint(1)
 	publisherID := uint(100)
 	bid := int64(20000)
@@ -29,7 +30,7 @@ func TestVerifyToken_Success(t *testing.T) {
 	th := NewTokenHandlerService()
 	key, _ := base64.StdEncoding.DecodeString(privateKey)
 
-	interaction := dto.ClickType
+	interaction := models.Click
 	adID := uint(1)
 	publisherID := uint(100)
 	bid := int64(20000)
@@ -55,7 +56,7 @@ func TestGenerateToken_EncryptError(t *testing.T) {
 	th := NewTokenHandlerService()
 	key := []byte("short key") // Short key to cause error in encryption
 
-	interaction := dto.ClickType
+	interaction := models.Click
 	adID := uint(1)
 	publisherID := uint(100)
 	bid := int64(20000)
