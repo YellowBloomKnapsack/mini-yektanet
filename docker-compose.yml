@@ -40,7 +40,8 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - kafka
+      - kafka:
+        condition: service_healthy
   eventserver:
     build:
       context: .
@@ -52,7 +53,8 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - kafka
+      - kafka:
+        condition: service_healthy
   db:
     image: 'postgres:15.7-alpine'
     environment:
@@ -106,7 +108,8 @@ services:
     image: apache/kafka:3.7.1
     # container_name: kafka
     depends_on:
-      - zookeeper
+      - zookeeper:
+        condition: service_healthy
     ports:
       - 9092:9092
     restart: unless-stopped
@@ -118,10 +121,10 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      # KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_CREATE_TOPICS: "click_events:1:1,impression_events:1:1"
+      KAFKA_CREATE_TOPICS: "click_events:3:1,impression_events:3:1"
     volumes:
       # - kafka-data:/var/lib/kafka/data
       - ./kafka-data:/opt/kafka/data
