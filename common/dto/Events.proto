@@ -2,16 +2,18 @@ syntax = "proto3";
 
 package dto;
 
-option go_package = 	"YellowBloomKnapsack/mini-yektanet/common/dto"; // Update this to your Go module path
+option go_package = "YellowBloomKnapsack/mini-yektanet/common/dto";
 
 message ClickEvent {
-  string publisher_username = 1;
-  string event_time = 2;
-  uint32 ad_id = 3;
+  string event_time = 1;
+  uint32 ad_id = 2;
+  uint32 publisher_id = 3;
+  int64 bid = 4;
 }
 
 message ImpressionEvent {
-  string publisher_username = 1;
-  string event_time = 2;
-  uint32 ad_id = 3;
+  string event_time = 1;
+  uint32 ad_id = 2;
+  uint32 publisher_id = 3;
+  int64 bid = 4;
 }
