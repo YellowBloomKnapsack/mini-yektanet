@@ -21,7 +21,8 @@ COPY panel/.env panel/.env
 COPY publisherwebsite/.env publisherwebsite/.env
 
 WORKDIR ${FOLDER_NAME}
-RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o output.out
+# RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o output.out
+RUN go build -o output.out
 
 # FROM registry.docker.ir/golang:1.22.4-alpine
 FROM alpine:3.20.2
