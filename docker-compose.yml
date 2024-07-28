@@ -134,7 +134,7 @@ services:
       # - kafka-data:/var/lib/kafka/data
       - ./kafka-data:/opt/kafka/data
     healthcheck:
-      test: kafka-topics --bootstrap-server kafka:9092 --list
+      test: kafka-topics --bootstrap-server localhost:9092 --list
       interval: 30s
       timeout: 10s
       retries: 3
