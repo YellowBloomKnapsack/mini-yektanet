@@ -3,9 +3,11 @@ package main
 import (
 	"log"
 	"os"
+	"strconv"
 
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/panel/handlers"
+	"YellowBloomKnapsack/mini-yektanet/panel/reporter"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -18,6 +20,14 @@ func main() {
 	}
 
 	database.InitDB()
+
+	clickTopic := os.Getenv("KAFKA_TOPIC_CLICK")
+	impressionTopic := os.Getenv("KAFKA_TOPIC_IMPRESSION")
+	clickBuffLimit, _ := strconv.Atoi(os.Getenv("KAFKA_CLICK_BUFF_LIMIT"))
+	impressionBuffLimit, _ := strconv.Atoi(os.Getenv("KAFKA_IMPRESSION_BUFF_LIMIT"))
+
+	reporterService := reporter.NewReporterService(clickTopic, impressionTopic, clickBuffLimit, impressionBuffLimit)
+	reporterService.Start()
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
