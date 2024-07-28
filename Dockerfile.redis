@@ -1,0 +1,7 @@
+FROM redislabs/rebloom:2.8.1 as builder
+
+FROM redis:7.2.5-alpine
+COPY --from=builder /usr/lib/redis/modules/redisbloom.so /usr/lib/redis/modules/redisbloom.so
+
+# CMD ["/run.sh", "--loadmodule", "/usr/lib/redis/modules/redisbloom.so"]
+CMD ["redis-server", "--appendonly", "yes", "--loadmodule", "/usr/lib/redis/modules/redisbloom.so"]
