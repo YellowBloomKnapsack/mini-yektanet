@@ -46,7 +46,7 @@ func (m *MockTokenHandler) VerifyToken(encryptedToken string, key []byte) (*dto.
 
 func setupEnv() {
 	os.Setenv("EVENT_SERVER_PORT", "8080")
-	os.Setenv("EVENT_SERVER_HOSTNAME", "localhost")
+	os.Setenv("EVENT_SERVER_PUBLIC_HOSTNAME", "localhost")
 	os.Setenv("CLICK_REQ_PATH", "click")
 	os.Setenv("IMPRESSION_REQ_PATH", "impression")
 	os.Setenv("PRIVATE_KEY", base64.StdEncoding.EncodeToString([]byte("mysecretkey123456")))
