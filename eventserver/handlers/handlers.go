@@ -11,10 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/protobuf/proto"
 
+	"YellowBloomKnapsack/mini-yektanet/common/cache"
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
-	"YellowBloomKnapsack/mini-yektanet/eventserver/worker"
-	"YellowBloomKnapsack/mini-yektanet/common/cache"
 )
 
 type EventServerHandler struct {
@@ -28,6 +27,7 @@ type EventServerHandler struct {
 // NewEventServerHandler initializes the event server handler with a Kafka producer.
 func NewEventServerHandler(tokenHandler tokenhandler.TokenHandlerInterface, cacheService cache.CacheInterface) *EventServerHandler {
 	kafkaBootstrapServers := os.Getenv("KAFKA_BOOTSTRAP_SERVERS")
+	kafkaBootstrapServers = kafkaBootstrapServers + ":9092"
 	if kafkaBootstrapServers == "" {
 		panic("KAFKA_BOOTSTRAP_SERVERS environment variable is not set")
 	}
