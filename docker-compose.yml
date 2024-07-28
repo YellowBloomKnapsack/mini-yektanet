@@ -15,36 +15,36 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    publisherwebsite:
-      build:
-        context: .
-        dockerfile: Dockerfile
-        args:
-          - FOLDER_NAME=publisherwebsite
-          - PORT_NUMBER=8084
-        ports:
-          - "8084:8084"
-        volumes:
-          - "publisherwebsite_static:/app/publisherwebsite/static"
-          - "publisherwebsite_html:/app/publisherwebsite/html"
-    adserver:
-      build:
-        context: .
-        dockerfile: Dockerfile
-        args:
-          - FOLDER_NAME=adserver
-          - PORT_NUMBER=8081
-        ports:
-          - "8081:8081"
-    eventserver:
-      build:
-        context: .
-        dockerfile: Dockerfile
-        args:
-          - FOLDER_NAME=eventserver
-          - PORT_NUMBER=8082
-        ports:
-          - "8082:8082"
+  publisherwebsite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - FOLDER_NAME=publisherwebsite
+        - PORT_NUMBER=8084
+    ports:
+      - "8084:8084"
+    volumes:
+      - "publisherwebsite_static:/app/publisherwebsite/static"
+      - "publisherwebsite_html:/app/publisherwebsite/html"
+  adserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - FOLDER_NAME=adserver
+        - PORT_NUMBER=8081
+    ports:
+      - "8081:8081"
+  eventserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - FOLDER_NAME=eventserver
+        - PORT_NUMBER=8082
+    ports:
+      - "8082:8082"
   db:
     image: 'postgres:15.7-alpine'
     environment:
