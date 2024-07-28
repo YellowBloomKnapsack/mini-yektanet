@@ -14,7 +14,7 @@ NC='\033[0m'
 BOLD=$(tput bold)
 NORMAL=$(tput sgr0)
 
-if [ $1 == help ]; then
+if [[ $1 == help ]]; then
     echo -e """Make sure to give execute permission to the script:
 ${BOLD}chmod +x ./tester.sh${NORMAL}
 
