@@ -82,7 +82,7 @@ func TestGetActiveAdsSuccessGetAllAds(t *testing.T) {
 		adDTO := dto.AdDTO{
 			ID:        ad.ID,
 			Text:      ad.Text,
-			ImagePath: "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + ad.ImagePath,
+			ImagePath: "http://" + os.Getenv("PANEL_PUBLIC_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + ad.ImagePath,
 			Bid:       ad.Bid,
 			Website:   ad.Website,
 		}
