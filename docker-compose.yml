@@ -112,7 +112,7 @@ services:
       retries: 3
   kafka:
     # image: apache/kafka:3.7.1
-    image: confluentinc/cp-server:7.5.0
+    image: &kafka-image confluentinc/cp-server:7.5.0
     # container_name: kafka
     depends_on:
       zookeeper:
@@ -135,8 +135,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-    command: sh -c "((sleep 15 && kafka-topics --create --if-not-exists  --zookeeper zookeeper:2181 --replication-factor 1 --partitions 3 --topic click_events && kafka-topics --create --if-not-exists --zookeeper zookeeper:2181 --replication-factor 1 --partitions 3 --topic impression_events)&) && /etc/confluent/docker/run ">
+      # command: sh -c "((sleep 15 && kafka-topics --create --if-not-exists  --zookeeper zookeeper:2181 --replication-factor 1 --partitions 3 --topic click_events && kafka-topics --create --if-not-exists --zookeeper zookeeper:2181 --replication-factor 1 --partitions 3 --topic impression_events)&) && /etc/confluent/docker/run ">
       # KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -146,11 +145,21 @@ services:
       # - kafka-data:/var/lib/kafka/data
       - kafka-data:/opt/kafka/data
       - kafka-docker-sock:/var/run/docker.sock
-    # healthcheck:
-    #   test: kafka-topics --bootstrap-server kafka:9092 --list
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
+    healthcheck:
+      test: kafka-topics --bootstrap-server kafka:9092 --list
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  init-kafka:
+    image: *kafka-image
+    working_dir: /opt/bitnami/kafka/bin
+    entrypoint: /bin/bash
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command: |
+      kafka-topics.sh --create --if-not-exists --topic click_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092 &&
+      kafka-topics.sh --create --if-not-exists --topic impression_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092
 
 volumes:
   panel_static:
