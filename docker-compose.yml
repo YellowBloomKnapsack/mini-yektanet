@@ -40,8 +40,10 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - kafka:
+      kafka:
         condition: service_healthy
+      panel:
+        condition: service_started
   eventserver:
     build:
       context: .
@@ -53,7 +55,7 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - kafka:
+      kafka:
         condition: service_healthy
   db:
     image: 'postgres:15.7-alpine'
@@ -108,7 +110,7 @@ services:
     image: apache/kafka:3.7.1
     # container_name: kafka
     depends_on:
-      - zookeeper:
+      zookeeper:
         condition: service_healthy
     ports:
       - 9092:9092
