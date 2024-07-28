@@ -152,14 +152,13 @@ services:
       retries: 3
   init-kafka:
     image: *kafka-image
-    working_dir: /opt/bitnami/kafka/bin
+    # working_dir: /opt/bitnami/kafka/bin
     entrypoint: /bin/bash
     depends_on:
       kafka:
         condition: service_healthy
-    command: |
-      kafka-topics.sh --create --if-not-exists --topic click_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092 &&
-      kafka-topics.sh --create --if-not-exists --topic impression_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092
+    command: >
+      bash -c "kafka-topics --create --if-not-exists --topic click_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092 && kafka-topics --create --if-not-exists --topic impression_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092"
 
 volumes:
   panel_static:
