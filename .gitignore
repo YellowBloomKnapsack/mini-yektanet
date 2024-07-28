@@ -30,3 +30,5 @@
 .idea
 
 **/test*.db
+
+**/*.private.sh

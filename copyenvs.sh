@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
-scp -P 2233 panel/.env comp2@95.217.125.138:/home/comp2/mini-yektanet/panel/.env
-scp -P 2233 adserver/.env comp2@95.217.125.138:/home/comp2/mini-yektanet/adserver/.env
-scp -P 2233 common/.env comp2@95.217.125.138:/home/comp2/mini-yektanet/common/.env
-scp -P 2233 eventserver/.env comp2@95.217.125.138:/home/comp2/mini-yektanet/eventserver/.env
-scp -P 2233 publisherwebsite/.env comp2@95.217.125.138:/home/comp2/mini-yektanet/publisherwebsite/.env
+
+# Declare variables
+SERVER_USER=
+SERVER_IP=
+SERVER_PORT=
+REMOTE_DIR="/home/$SERVER_USER/mini-yektanet"
+
+# Function to perform SCP
+perform_scp() {
+    local source_file="$1"
+    local dest_path="$2"
+    scp -P $SERVER_PORT "$source_file" "$SERVER_USER@$SERVER_IP:$dest_path"
+}
+
+# Perform SCP for each .env file
+perform_scp "panel/.env" "$REMOTE_DIR/panel/.env"
+perform_scp "adserver/.env" "$REMOTE_DIR/adserver/.env"
+perform_scp "common/.env" "$REMOTE_DIR/common/.env"
+perform_scp "eventserver/.env" "$REMOTE_DIR/eventserver/.env"
+perform_scp "publisherwebsite/.env" "$REMOTE_DIR/publisherwebsite/.env"

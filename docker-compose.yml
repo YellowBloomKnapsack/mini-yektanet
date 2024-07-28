@@ -6,6 +6,7 @@ services:
       args:
         - FOLDER_NAME=panel
         - PORT_NUMBER=8083
+    restart: unless-stopped
     ports:
       - "8083:8083"
       # env_file:
@@ -22,11 +23,12 @@ services:
       args:
         - FOLDER_NAME=publisherwebsite
         - PORT_NUMBER=8084
+    restart: unless-stopped
     ports:
       - "8084:8084"
     volumes:
       - "publisherwebsite_static:/app/publisherwebsite/static"
-      - "publisherwebsite_html:/app/publisherwebsite/html"
+      # - "publisherwebsite_html:/app/publisherwebsite/html"
   adserver:
     build:
       context: .
@@ -34,8 +36,11 @@ services:
       args:
         - FOLDER_NAME=adserver
         - PORT_NUMBER=8081
+    restart: unless-stopped
     ports:
       - "8081:8081"
+    depends_on:
+      - kafka
   eventserver:
     build:
       context: .
@@ -43,8 +48,11 @@ services:
       args:
         - FOLDER_NAME=eventserver
         - PORT_NUMBER=8082
+    restart: unless-stopped
     ports:
       - "8082:8082"
+    depends_on:
+      - kafka
   db:
     image: 'postgres:15.7-alpine'
     environment:
@@ -62,8 +70,73 @@ services:
       timeout: 60s
       retries: 5
       start_period: 80s
+  redis:
+    image: redis:7.2.5-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --loadmodule /opt/redis-stack/lib/redisbloom.so
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+  zookeeper:
+    image: zookeeper:3.8.4
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: unless-stopped
+    ports:
+      - 2181:2181
+    volumes:
+      # - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-data:/data
+      # - zookeeper-logs:/var/lib/zookeeper/log
+      - zookeeper-logs:/log
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  kafka:
+    image: apache/kafka:3.7.1
+    # container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - 9092:9092
+    restart: unless-stopped
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # KAFKA_LISTENERS: PLAINTEXT://:9092
+      # KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_CREATE_TOPICS: "click_events:1:1,impression_events:1:1"
+    volumes:
+      # - kafka-data:/var/lib/kafka/data
+      - ./kafka-data:/opt/kafka/data
+    healthcheck:
+      test: kafka-topics --bootstrap-server kafka:9092 --list
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   panel_static:
   postgres_data:
-  publisherwebsite_static:
-  publisherwebsite_html:
+  publisherwebsite_static: # publisherwebsite_html:
+
+  redis-data:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-data:
