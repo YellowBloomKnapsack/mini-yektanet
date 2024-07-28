@@ -1,0 +1,58 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+        # - main
+        - feature/cicd
+#   pull_request:
+#     branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.22.4
+
+    - name: Run tests
+      run: ./tester.sh
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to server
+      uses: appleboy/ssh-action@master
+      env:
+        GITHUB_SHA: ${{ github.sha }}
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        port: ${{ secrets.SERVER_SSH_PORT }}
+        envs: GITHUB_SHA
+        script: |
+          # Navigate to the project directory (create if it doesn't exist)
+          mkdir -p ~/mini-yektanet
+          cd ~/mini-yektanet
+
+          # Clone or pull the latest changes
+          if [ -d .git ]; then
+            git pull origin main
+          else
+            git clone https://github.com/YellowBloomKnapsack/mini-yektanet.git .
+          fi
+
+          # Checkout the specific commit that triggered the workflow
+          git checkout $GITHUB_SHA
+
+          # Build and start the containers
+          docker compose up -d --build
+
+          # Prune old images to free up space (optional)
+          docker image prune -af
