@@ -35,5 +35,5 @@ func main() {
 	if port == "" {
 		port = "8081"
 	}
-	r.Run(os.Getenv("AD_SERVER_HOSTNAME") + ":" + port)
+	r.Run(os.Getenv("GIN_HOSTNAME") + ":" + port)
 }
