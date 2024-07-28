@@ -15,7 +15,7 @@ JSON data received from AdServer must have the following fields:
 const arr = window.location.href.split('/')
 const publisherName = arr[arr.length-1]
 // const AdServerAPILink = "http://localhost:8081"
-const AdServerAPILink = arr[arr.length-2].replace("8084","8081")
+const AdServerAPILink = "http://"+arr[arr.length-2].replace("8084","8081")
 
 fetch(AdServerAPILink+"/"+publisherName)
 .then((res) => {
