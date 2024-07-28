@@ -8,13 +8,43 @@ services:
         - PORT_NUMBER=8083
     ports:
       - "8083:8083"
-    env_file:
-      - ./panel/.env
+      # env_file:
+      # - ./panel/.env
     volumes:
       - "panel_static:/app/panel/static"
     depends_on:
       db:
         condition: service_healthy
+    publisherwebsite:
+      build:
+        context: .
+        dockerfile: Dockerfile
+        args:
+          - FOLDER_NAME=publisherwebsite
+          - PORT_NUMBER=8084
+        ports:
+          - "8084:8084"
+        volumes:
+          - "publisherwebsite_static:/app/publisherwebsite/static"
+          - "publisherwebsite_html:/app/publisherwebsite/html"
+    adserver:
+      build:
+        context: .
+        dockerfile: Dockerfile
+        args:
+          - FOLDER_NAME=adserver
+          - PORT_NUMBER=8081
+        ports:
+          - "8081:8081"
+    eventserver:
+      build:
+        context: .
+        dockerfile: Dockerfile
+        args:
+          - FOLDER_NAME=eventserver
+          - PORT_NUMBER=8082
+        ports:
+          - "8082:8082"
   db:
     image: 'postgres:15.7-alpine'
     environment:
@@ -35,3 +65,5 @@ services:
 volumes:
   panel_static:
   postgres_data:
+  publisherwebsite_static:
+  publisherwebsite_html:
