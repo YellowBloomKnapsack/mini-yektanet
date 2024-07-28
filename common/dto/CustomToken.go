@@ -8,9 +8,10 @@ const (
 )
 
 type CustomToken struct {
-	Interaction       InteractionType `json:"interaction"`
-	AdID              uint            `json:"ad_id"`
-	PublisherUsername string          `json:"publisher_username"`
-	RedirectPath      string          `json:"redirect_path"`
-	CreatedAt         int64           `json:"created_at"`
+	Interaction  InteractionType `json:"interaction"`
+	AdID         uint            `json:"ad_id"`
+	PublisherID  uint            `json:"publisher_id"`
+	RedirectPath string          `json:"redirect_path"`
+	Bid          int64           `json:"bid"`
+	CreatedAt    int64           `json:"created_at"`
 }
