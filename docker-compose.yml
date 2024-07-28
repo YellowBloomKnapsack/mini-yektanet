@@ -145,7 +145,7 @@ services:
       retries: 3
   init-kafka:
     image: *kafka-image
-    entrypoint: /bin/bash -c "kafka-topics --create --if-not-exists --topic click_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092 && kafka-topics --create --if-not-exists --topic impression_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092"
+    entrypoint: /bin/bash -c "kafka-topics --create --if-not-exists --topic click_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092 && kafka-topics --create --if-not-exists --topic impression_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092 && exit 0"
     depends_on:
       kafka:
         condition: service_healthy
