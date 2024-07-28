@@ -6,7 +6,7 @@ services:
       args:
         - FOLDER_NAME=panel
         - PORT_NUMBER=8083
-    #restart: unless-stopped
+    restart: unless-stopped
     ports:
       - "8083:8083"
       # env_file:
@@ -23,7 +23,7 @@ services:
       args:
         - FOLDER_NAME=publisherwebsite
         - PORT_NUMBER=8084
-    #restart: unless-stopped
+    restart: unless-stopped
     ports:
       - "8084:8084"
     volumes:
@@ -36,7 +36,7 @@ services:
       args:
         - FOLDER_NAME=adserver
         - PORT_NUMBER=8081
-    #restart: unless-stopped
+    restart: unless-stopped
     ports:
       - "8081:8081"
     depends_on:
@@ -51,7 +51,7 @@ services:
       args:
         - FOLDER_NAME=eventserver
         - PORT_NUMBER=8082
-    #restart: unless-stopped
+    restart: unless-stopped
     ports:
       - "8082:8082"
     depends_on:
@@ -65,7 +65,7 @@ services:
       - 'POSTGRES_PASSWORD=1234'
     ports:
       - '5433:5432'
-    #restart: unless-stopped
+    restart: unless-stopped
     volumes:
       - "postgres_data:/var/lib/postgresql/data"
     healthcheck:
@@ -84,7 +84,7 @@ services:
     volumes:
       - redis-data:/data
     # command: redis-server --appendonly yes --loadmodule /opt/redis-stack/lib/redisbloom.so
-    #restart: unless-stopped
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
@@ -97,7 +97,7 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    #restart: unless-stopped
+    restart: unless-stopped
     ports:
       - 2181:2181
     volumes:
@@ -113,29 +113,22 @@ services:
   kafka:
     # image: apache/kafka:3.7.1
     image: &kafka-image confluentinc/cp-server:7.5.0
-    # container_name: kafka
     depends_on:
       zookeeper:
         condition: service_healthy
     ports:
       - 29092:29092
       - 9092:9092
-    #restart: unless-stopped
+    restart: unless-stopped
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      # KAFKA_LISTENERS: PLAINTEXT://:9092
-      # KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      # KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
-      # KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      # KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       # KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       # KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      # command: sh -c "((sleep 15 && kafka-topics --create --if-not-exists  --zookeeper zookeeper:2181 --replication-factor 1 --partitions 3 --topic click_events && kafka-topics --create --if-not-exists --zookeeper zookeeper:2181 --replication-factor 1 --partitions 3 --topic impression_events)&) && /etc/confluent/docker/run ">
       # KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -152,15 +145,10 @@ services:
       retries: 3
   init-kafka:
     image: *kafka-image
-    # working_dir: /opt/bitnami/kafka/bin
     entrypoint: /bin/bash -c "kafka-topics --create --if-not-exists --topic click_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092 && kafka-topics --create --if-not-exists --topic impression_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092"
     depends_on:
       kafka:
         condition: service_healthy
-    # command: tail -f /dev/null
-    # command: |
-    #   kafka-topics --create --if-not-exists --topic click_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092
-    #   kafka-topics --create --if-not-exists --topic impression_events --replication-factor=1 --partitions=3 --bootstrap-server kafka:9092
 
 volumes:
   panel_static:
