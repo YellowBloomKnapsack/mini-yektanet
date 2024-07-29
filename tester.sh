@@ -26,13 +26,13 @@ ${BOLD}./tester.sh adserver${NORMAL}"""
 fi
 
 if ! [ -d $TARGET_SERVICE ]; then
-  echo -e "${RED}${BOLD}Could not find directory ${TARGET_SERVICE}${NC}${NORMAL}"
-  exit 1
+    echo -e "${RED}${BOLD}Could not find directory ${TARGET_SERVICE}${NC}${NORMAL}"
+    exit 1
 fi
 
 # Function to check if a directory contains test files
 contains_test_files() {
-    if ls "$1"/*_test.go &> /dev/null; then
+    if ls "$1"/*_test.go &>/dev/null; then
         return 0
     else
         return 1
@@ -53,9 +53,10 @@ run_tests_with_coverage() {
             # Print each test function result with color
             echo "$result" | while IFS= read -r line; do
                 if [[ "$line" == *"--- PASS"* ]]; then
-                    echo -e "${GREEN}✓ $line ${NC}"  # Green for pass
+                    echo -e "${GREEN}✓ $line ${NC}" # Green for pass
                 elif [[ "$line" == *"--- FAIL"* ]]; then
-                    echo -e "${RED}✕ $line ${NC}"  # Red for fail
+                    echo -e "${RED}✕ $line ${NC}" # Red for fail
+                    exit 1
                 fi
             done
 

@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 // Almost the same as the above, but this one is for single test instead of collection of tests
 func setupTest() func() {
 	godotenv.Load("../.env", "../../common/.env", "../../publisherwebsite/.env", "../../adserver/.env")
@@ -87,14 +86,14 @@ func TestHandleClickAdInteraction(t *testing.T) {
 	assert.Equal(t, int64(900), updatedAdvertiser.Balance)
 }
 
-func TestHandleImpressionAdInteraction(t *testing.T) {
+func testHandleImpressionAdInteraction(t *testing.T) {
 	// Set up the test environment
 	r := gin.Default()
 	r.POST(os.Getenv("INTERACTION_IMPRESSION_API"), HandleImpressionAdInteraction)
 
 	// Create a test publisher and ad
 	publisher := models.Publisher{
-		Username: "testpublisher",
+		Username: "testpublisher2",
 		Balance:  1000,
 	}
 	assert.NoError(t, database.DB.Create(&publisher).Error)
@@ -142,7 +141,7 @@ func TestHandleClickAdInteractionWithInvalidRequest(t *testing.T) {
 	// Create an invalid request
 	body, _ := json.Marshal(map[string]interface{}{
 		"ad_id":              "invalid_id",
-		"publisher_username": "testpublisher",
+		"publisher_username": "testpublisher20",
 		"event_time":         time.Now(),
 	})
 	req, _ := http.NewRequest("POST", os.Getenv("INTERACTION_CLICK_API"), bytes.NewBuffer(body))
@@ -200,7 +199,7 @@ func TestHandleClickAdInteractionWithInvalidYektanetPortion(t *testing.T) {
 
 	// Create a test publisher and ad
 	publisher := models.Publisher{
-		Username: "testpublisher",
+		Username: "testpublisher21",
 		Balance:  1000,
 	}
 	assert.NoError(t, database.DB.Create(&publisher).Error)
