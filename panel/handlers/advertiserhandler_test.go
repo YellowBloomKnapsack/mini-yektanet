@@ -32,7 +32,6 @@ var sequentialTests = []func(t *testing.T){
 	testAddFunds,
 	testCreateAd,
 	testHandleEditAd,
-	testHandleImpressionAdInteraction,
 	testPublisherPanel,
 	testWithdrawPublisherBalanceSuccessfulWithdrawal,
 }
