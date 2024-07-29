@@ -31,6 +31,7 @@ func GetSumOfBids(db *gorm.DB, adID uint) (int64, error) {
 		Debug().
 		Scan(&sum).Error
 
+	// return 0 if no row was found
 	if sum.Valid {
 		return int64(sum.Int64), nil
 	} else {
