@@ -37,7 +37,7 @@ type MockTokenHandler struct {
 	GenerateTokenError  error
 }
 
-func (m *MockTokenHandler) GenerateToken(interaction models.AdsInteractionType, adID, publisherID uint, bid int64, redirectPath string, key []byte) (string, error) {
+func (m *MockTokenHandler) GenerateToken(interaction models.AdsInteractionType, adID, publisherID uint, bid int64, key []byte) (string, error) {
 	return m.GenerateTokenResult, m.GenerateTokenError
 }
 

@@ -29,7 +29,7 @@ func setupEnv() {
 // Mock TokenHandler
 type MockTokenHandler struct{}
 
-func (m *MockTokenHandler) GenerateToken(interaction models.AdsInteractionType, adID, publisherID uint, bid int64, redirectPath string, key []byte) (string, error) {
+func (m *MockTokenHandler) GenerateToken(interaction models.AdsInteractionType, adID, publisherID uint, bid int64, key []byte) (string, error) {
 	// Not needed for these tests
 	return "duplicate", nil
 }
@@ -37,12 +37,11 @@ func (m *MockTokenHandler) GenerateToken(interaction models.AdsInteractionType, 
 func (m *MockTokenHandler) VerifyToken(encryptedToken string, key []byte) (*dto.CustomToken, error) {
 	// Return a mock token
 	return &dto.CustomToken{
-		Interaction:  models.Click,
-		AdID:         123,
-		PublisherID:  234,
-		RedirectPath: "http://example.com",
-		CreatedAt:    time.Now().Unix(),
-		Bid:          1000,
+		Interaction: models.Click,
+		AdID:        123,
+		PublisherID: 234,
+		CreatedAt:   time.Now().Unix(),
+		Bid:         1000,
 	}, nil
 }
 
@@ -81,14 +80,14 @@ func TestProduceImpressionIfTokenValid(t *testing.T) {
 
 	handler := NewEventServerHandler(mockTokenHandler, mockCacheService, mockProducerService)
 
-	data, _ := mockTokenHandler.VerifyToken("", []byte(""))
+	_, _ = mockTokenHandler.VerifyToken("", []byte(""))
 
-	handler.produceImpressionIfTokenValid("", data)
+	handler.produceImpressionIfTokenValid("", []byte(""))
 
 	assert.Equal(t, mockProducerService.clickCnt, 0)
 	assert.Equal(t, mockProducerService.impCnt, 1)
 
-	handler.produceImpressionIfTokenValid("", data)
+	handler.produceImpressionIfTokenValid("", []byte(""))
 
 	assert.Equal(t, mockProducerService.clickCnt, 0)
 	assert.Equal(t, mockProducerService.impCnt, 1)
@@ -103,14 +102,14 @@ func TestProduceClickIfTokenValid(t *testing.T) {
 
 	handler := NewEventServerHandler(mockTokenHandler, mockCacheService, mockProducerService)
 
-	data, _ := mockTokenHandler.VerifyToken("", []byte(""))
+	_, _ = mockTokenHandler.VerifyToken("", []byte(""))
 
-	handler.produceClickIfTokenValid("", data)
+	handler.produceClickIfTokenValid("", []byte(""))
 
 	assert.Equal(t, mockProducerService.clickCnt, 1)
 	assert.Equal(t, mockProducerService.impCnt, 0)
 
-	handler.produceClickIfTokenValid("", data)
+	handler.produceClickIfTokenValid("", []byte(""))
 
 	assert.Equal(t, mockProducerService.clickCnt, 1)
 	assert.Equal(t, mockProducerService.impCnt, 0)

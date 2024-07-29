@@ -35,7 +35,8 @@ func (h *AdServerHandler) GetAd(c *gin.Context) {
 	}
 
 	eventServerPort := os.Getenv("EVENT_SERVER_PORT")
-	hostName := os.Getenv("EVENT_SERVER_PUBLIC_HOSTNAME")
+	//hostName := os.Getenv("EVENT_SERVER_PUBLIC_HOSTNAME")
+	hostName := os.Getenv("EVENT_SERVER_HOSTNAME")
 	eventServerURL := "http://" + hostName + ":" + eventServerPort
 
 	clickReqPath := os.Getenv("CLICK_REQ_PATH")
@@ -46,8 +47,8 @@ func (h *AdServerHandler) GetAd(c *gin.Context) {
 	privateKey := os.Getenv("PRIVATE_KEY")
 	key, _ := base64.StdEncoding.DecodeString(privateKey)
 
-	clickToken, _ := h.tokenHandler.GenerateToken(models.Click, chosenAd.ID, uint(publisherId), chosenAd.Bid, chosenAd.Website, key)
-	impressionToken, _ := h.tokenHandler.GenerateToken(models.Impression, chosenAd.ID, uint(publisherId), chosenAd.Bid, chosenAd.Website, key)
+	clickToken, _ := h.tokenHandler.GenerateToken(models.Click, chosenAd.ID, uint(publisherId), chosenAd.Bid, key)
+	impressionToken, _ := h.tokenHandler.GenerateToken(models.Impression, chosenAd.ID, uint(publisherId), chosenAd.Bid, key)
 
 	c.JSON(http.StatusOK, gin.H{
 		"image_link":       chosenAd.ImagePath,
@@ -56,6 +57,7 @@ func (h *AdServerHandler) GetAd(c *gin.Context) {
 		"click_link":       eventServerURL + "/" + clickReqPath,
 		"impression_token": impressionToken,
 		"click_token":      clickToken,
+		"redirect_path":    chosenAd.Website,
 	})
 }
 

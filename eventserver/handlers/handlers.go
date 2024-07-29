@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/base64"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -37,7 +36,8 @@ func NewEventServerHandler(tokenHandler tokenhandler.TokenHandlerInterface, cach
 }
 
 type TokenRequest struct {
-	Token string `json:"token"`
+	Token        string `json:"token"`
+	RedirectPath string `json:"redirectPath"`
 }
 
 // PostClick handles click events and produces them to a Kafka topic.
@@ -55,18 +55,10 @@ func (h *EventServerHandler) PostClick(c *gin.Context) {
 		return
 	}
 
-	token := req.Token
-	data, err := h.tokenHandler.VerifyToken(token, key)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
-		return
-	}
+	c.Redirect(http.StatusMovedPermanently, req.RedirectPath)
 
 	// Running in goroutine so the server wouldn't have to wait
-	go h.produceClickIfTokenValid(token, data)
-	fmt.Println("slkdfjdfkdfjgkdfldf")
-
-	c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
+	go h.produceClickIfTokenValid(req.Token, key)
 }
 
 // PostImpression handles impression events and produces them to a Kafka topic.
@@ -84,18 +76,17 @@ func (h *EventServerHandler) PostImpression(c *gin.Context) {
 		return
 	}
 
-	token := req.Token
+	// Running in goroutine so the server wouldn't have to wait
+	go h.produceImpressionIfTokenValid(req.Token, key)
+}
+
+func (h *EventServerHandler) produceImpressionIfTokenValid(token string, key []byte) {
 	data, err := h.tokenHandler.VerifyToken(token, key)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		log.Printf("Failed to verify token: %v", err)
 		return
 	}
 
-	// Running in goroutine so the server wouldn't have to wait
-	go h.produceImpressionIfTokenValid(token, data)
-}
-
-func (h *EventServerHandler) produceImpressionIfTokenValid(token string, data *dto.CustomToken) {
 	present := h.cacheService.IsPresent(token)
 	if present {
 		log.Printf("Token %s already present", token)
@@ -126,7 +117,13 @@ func (h *EventServerHandler) produceImpressionIfTokenValid(token string, data *d
 	}
 }
 
-func (h *EventServerHandler) produceClickIfTokenValid(token string, data *dto.CustomToken) {
+func (h *EventServerHandler) produceClickIfTokenValid(token string, key []byte) {
+	data, err := h.tokenHandler.VerifyToken(token, key)
+	if err != nil {
+		log.Printf("Failed to verify token: %v", err)
+		return
+	}
+
 	present := h.cacheService.IsPresent(token)
 	if present {
 		log.Printf("Token %s already present", token)

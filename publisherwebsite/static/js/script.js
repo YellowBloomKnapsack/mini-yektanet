@@ -68,7 +68,8 @@ function clickHandler(data) {
     fetch(data["click_link"], {
         method: "POST",
         body: JSON.stringify({
-            token: data["click_token"]
+            token: data["click_token"],
+            redirectPath: data["redirect_path"]
         })
     })
     .then(res=>{

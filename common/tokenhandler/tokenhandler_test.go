@@ -19,9 +19,8 @@ func TestGenerateToken_Success(t *testing.T) {
 	adID := uint(1)
 	publisherID := uint(100)
 	bid := int64(20000)
-	redirectPath := "http://example.com"
 
-	token, err := th.GenerateToken(interaction, adID, publisherID, bid, redirectPath, key)
+	token, err := th.GenerateToken(interaction, adID, publisherID, bid, key)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
 }
@@ -34,10 +33,9 @@ func TestVerifyToken_Success(t *testing.T) {
 	adID := uint(1)
 	publisherID := uint(100)
 	bid := int64(20000)
-	redirectPath := "http://example.com"
 
 	// Generate token
-	token, err := th.GenerateToken(interaction, adID, publisherID, bid, redirectPath, key)
+	token, err := th.GenerateToken(interaction, adID, publisherID, bid, key)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
 
@@ -49,7 +47,6 @@ func TestVerifyToken_Success(t *testing.T) {
 	assert.Equal(t, adID, verifiedToken.AdID)
 	assert.Equal(t, publisherID, verifiedToken.PublisherID)
 	assert.Equal(t, bid, verifiedToken.Bid)
-	assert.Equal(t, redirectPath, verifiedToken.RedirectPath)
 }
 
 func TestGenerateToken_EncryptError(t *testing.T) {
@@ -60,9 +57,8 @@ func TestGenerateToken_EncryptError(t *testing.T) {
 	adID := uint(1)
 	publisherID := uint(100)
 	bid := int64(20000)
-	redirectPath := "http://example.com"
 
-	token, err := th.GenerateToken(interaction, adID, publisherID, bid, redirectPath, key)
+	token, err := th.GenerateToken(interaction, adID, publisherID, bid, key)
 	assert.Error(t, err)
 	assert.Empty(t, token)
 }
