@@ -42,6 +42,7 @@ function clickHandler(data) {
         method: "POST",
         body: JSON.stringify({
             token: data["click_token"]
+            redirectPath: data["redirect_path"]
         })
     })
     .then((res) => {
