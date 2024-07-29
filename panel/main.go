@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -19,6 +20,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	fmt.Println("Listening on port ")
 	database.InitDB()
 
 	clickTopic := os.Getenv("KAFKA_TOPIC_CLICK")
@@ -53,12 +55,11 @@ func main() {
 		publisher.POST("/:username/withdraw", handlers.WithdrawPublisherBalance)
 	}
 	r.GET(os.Getenv("GET_ADS_API"), handlers.GetActiveAds)
-	r.POST(os.Getenv("INTERACTION_CLICK_API"), handlers.HandleClickAdInteraction)
-	r.POST(os.Getenv("INTERACTION_IMPRESSION_API"), handlers.HandleImpressionAdInteraction)
 
 	port := os.Getenv("PANEL_PORT")
 	if port == "" {
 		port = "8083"
 	}
+
 	r.Run(os.Getenv("PANEL_HOSTNAME") + ":" + port)
 }

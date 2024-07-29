@@ -4,6 +4,8 @@ import (
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
+	"YellowBloomKnapsack/mini-yektanet/panel/handlers"
+	"YellowBloomKnapsack/mini-yektanet/panel/logic"
 	"github.com/golang/protobuf/proto"
 	"gorm.io/gorm"
 	"strconv"
@@ -38,7 +40,7 @@ func newConsumerService(kafkaBootstrapServers, topic string, buffLimit int, hand
 	kafkaConsumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": kafkaBootstrapServers,
 		"auto.offset.reset": "earliest",
-		"group.id":          1,
+		"group.id":          "yektanet-reporter-" + topic,
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -59,29 +61,24 @@ func newConsumerService(kafkaBootstrapServers, topic string, buffLimit int, hand
 
 func (c *ConsumerService) Start() {
 	defer c.consumer.Close()
-	fmt.Println("STARTING")
 
 	buffer := make([]kafka.Message, 0, c.buffLimit)
 
 	for {
-		fmt.Println("Start")
-		msg, err := c.consumer.ReadMessage(5000 * time.Millisecond)
-		fmt.Println("Read")
+		msg, err := c.consumer.ReadMessage(100 * time.Millisecond)
 		if err != nil {
-			fmt.Println("ERR")
 			// Handle message reading errors
-			log.Printf("Consumer error: %v\n", err)
+			//log.Printf("Consumer error: %v\n", err)
 			continue
 		}
 
 		buffer = append(buffer, *msg)
-		fmt.Println("HERE")
 		if len(buffer) >= c.buffLimit {
-			fmt.Println("Read2")
+			fmt.Println("Buffer full, clearing it")
 			if err := c.handler(buffer); err != nil {
 				log.Printf("Error handling message: %v", err)
 			}
-			buffer = buffer[:0] // Reset the buffer
+			buffer = make([]kafka.Message, 0) // Reset the buffer
 		}
 	}
 
@@ -110,7 +107,7 @@ func (r *ReporterService) Start() {
 }
 
 func handleClick(messages []kafka.Message) error {
-	fmt.Println("HANDLIGN CLICDKjckdsfjkgfjgklfd")
+	fmt.Println("Handling click event")
 
 	for _, msg := range messages {
 		var event dto.ClickEvent
@@ -124,16 +121,9 @@ func handleClick(messages []kafka.Message) error {
 
 		// Find the publisher
 		var publisher models.Publisher
-		if err := tx.Where("username = ?", event.PublisherUsername).First(&publisher).Error; err != nil {
+		if err := tx.Where("id = ?", event.PublisherId).First(&publisher).Error; err != nil {
 			tx.Rollback()
 			return fmt.Errorf("failed to get publisher by username: %w", err)
-		}
-
-		// Find the ad and its associated advertiser
-		var ad models.Ad
-		if err := tx.Preload("Advertiser").First(&ad, event.AdId).Error; err != nil {
-			tx.Rollback()
-			return fmt.Errorf("failed to get ad by ad id: %w", err)
 		}
 
 		// Create the interaction
@@ -141,14 +131,21 @@ func handleClick(messages []kafka.Message) error {
 		interaction := models.AdsInteraction{
 			Type:        int(models.Click),
 			EventTime:   eventTime,
-			AdID:        ad.ID,
-			Bid:         ad.Bid,
-			PublisherID: publisher.ID,
+			AdID:        uint(event.AdId),
+			Bid:         event.Bid,
+			PublisherID: uint(event.PublisherId),
 		}
 
 		if err := tx.Create(&interaction).Error; err != nil {
 			tx.Rollback()
 			return fmt.Errorf("failed to create interaction: %w", err)
+		}
+
+		// Find the ad and its associated advertiser
+		var ad models.Ad
+		if err := tx.Preload("Advertiser").First(&ad, event.AdId).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to get ad by ad id: %w", err)
 		}
 
 		// Update ad's total cost
@@ -175,7 +172,7 @@ func handleClick(messages []kafka.Message) error {
 
 		// Create a new transaction record for advertiser
 		transaction_publisher := models.Transaction{
-			CustomerID:   publisher.ID,
+			CustomerID:   uint(event.PublisherId),
 			CustomerType: models.Customer_Publisher,
 			Amount:       publisherPortion,
 			Income:       true,
@@ -189,10 +186,10 @@ func handleClick(messages []kafka.Message) error {
 			return fmt.Errorf("failed to create transaction publisher: %w", err)
 		}
 
-		//sum, _ := logic.GetSumOfBids(database.DB, ad.ID)
-		//if sum > ad.Advertiser.Balance {
-		//	go handlers.NotifyAdsBrake(ad.ID)
-		//}
+		sum, _ := logic.GetSumOfBids(database.DB, ad.ID)
+		if sum > ad.Advertiser.Balance {
+			go handlers.NotifyAdsBrake(ad.ID)
+		}
 
 		// Decrease advertiser's balance
 		if err := tx.Model(&ad.Advertiser).Update("balance", gorm.Expr("balance - ?", ad.Bid)).Error; err != nil {
@@ -227,10 +224,8 @@ func handleClick(messages []kafka.Message) error {
 }
 
 func handleImpression(messages []kafka.Message) error {
-	fmt.Println("handle impression")
-	fmt.Println(messages)
-	sliceToInsert := make([]models.AdsInteraction, 0)
-	fmt.Println("///////////////////??????????????????????????????????1")
+	fmt.Println("Handling impression event")
+	interactionsToInsert := make([]models.AdsInteraction, 0)
 	for _, msg := range messages {
 		var event dto.ImpressionEvent
 		err := proto.Unmarshal(msg.Value, &event)
@@ -238,51 +233,22 @@ func handleImpression(messages []kafka.Message) error {
 			return fmt.Errorf("failed to unmarshal proto message: %w", err)
 		}
 
-		//// Find the publisher
-		fmt.Println("///////////////////??????????????????????????????????4")
-		var publisher models.Publisher
-		if err := database.DB.Where("username = ?", event.PublisherUsername).First(&publisher).Error; err != nil {
-			return err
-		}
-
-		//// Find the ad
-		var ad models.Ad
-		if err := database.DB.First(&ad, event.AdId).Error; err != nil {
-			return err
-		}
-
 		//// Create the interaction
 		eventTime, _ := time.Parse(time.RFC3339, event.EventTime)
 		interaction := models.AdsInteraction{
-			Type:        int(dto.ImpressionType),
+			Type:        int(models.Impression),
 			EventTime:   eventTime,
-			AdID:        ad.ID,
-			PublisherID: publisher.ID,
-			Bid:         ad.Bid,
+			AdID:        uint(event.AdId),
+			PublisherID: uint(event.PublisherId),
+			Bid:         event.Bid,
 		}
 
-		sliceToInsert = append(sliceToInsert, interaction)
+		interactionsToInsert = append(interactionsToInsert, interaction)
 	}
 
-	if err := database.DB.Create(&sliceToInsert).Error; err != nil {
+	if err := database.DB.Create(&interactionsToInsert).Error; err != nil {
 		return err
 	}
 	fmt.Println("///////////////////??????????????????????????????????5")
 	return nil
 }
-
-//func (kc *ReporterService) HandleMessage(msg kafka.Message) error {
-//	topicName := *msg.TopicPartition.Topic
-//	if topicName == os.Getenv("KAFKA_TOPIC_CLICK") {
-//	} else if topicName == os.Getenv("KAFKA_TOPIC_IMPRESSION") {
-//		var event dto.ImpressionEvent
-//		err := proto.Unmarshal(msg.Value, &event)
-//		if err != nil {
-//			return fmt.Errorf("failed to unmarshal proto message: %w", err)
-//		}
-//	}
-//
-//	// Log or process the event
-//	fmt.Printf("Consumed message from topic %s: %v\n", *msg.TopicPartition.Topic, event)
-//	return nil
-//}
