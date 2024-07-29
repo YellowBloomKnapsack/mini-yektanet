@@ -48,17 +48,28 @@ run_tests_with_coverage() {
             echo -e "${BLUE}- Running tests in $dir ${NC}"
 
             # Run the tests and capture the output
+            result=$(go build $dir 2>&1)
+            exit_code=$?
+
+            result=$(go test -c $dir 2>&1)
+            exit_code=$?
+
+            if [[ $exit_code -ne 0 ]]; then
+                echo -e "${RED} Could not build ${dir}${NC}"
+                exit 1
+            fi
+
             result=$(go test -coverprofile=coverage.out -v $dir 2>&1)
 
             # Print each test function result with color
-            echo "$result" | while IFS= read -r line; do
+            while IFS= read -r line; do
                 if [[ "$line" == *"--- PASS"* ]]; then
                     echo -e "${GREEN}✓ $line ${NC}" # Green for pass
                 elif [[ "$line" == *"--- FAIL"* ]]; then
                     echo -e "${RED}✕ $line ${NC}" # Red for fail
                     exit 1
                 fi
-            done
+            done <<< "$result"
 
             # Print the coverage
             if [ -f coverage.out ]; then
@@ -69,6 +80,8 @@ run_tests_with_coverage() {
             fi
         fi
     done
+
+    exit 0
 }
 
 # Execute the function
