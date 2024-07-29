@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -64,9 +65,10 @@ func (h *EventServerHandler) PostClick(c *gin.Context) {
 	if !present {
 		h.cacheService.Add(token)
 		eventData := &dto.ClickEvent{
-			PublisherUsername: data.PublisherUsername,
-			EventTime:         time.Now().Format(time.RFC3339),
-			AdId:              uint32(data.AdID),
+			PublisherId: uint32(data.PublisherID),
+			EventTime:   time.Now().Format(time.RFC3339),
+			AdId:        uint32(data.AdID),
+			Bid:         data.Bid,
 		}
 
 		// Marshal to Protobuf
@@ -111,10 +113,12 @@ func (h *EventServerHandler) PostImpression(c *gin.Context) {
 	present := h.cacheService.IsPresent(token)
 	if !present {
 		h.cacheService.Add(token)
+
 		eventData := &dto.ImpressionEvent{
-			PublisherUsername: data.PublisherUsername,
-			EventTime:         time.Now().Format(time.RFC3339),
-			AdId:              uint32(data.AdID),
+			PublisherId: uint32(data.PublisherID),
+			EventTime:   time.Now().Format(time.RFC3339),
+			AdId:        uint32(data.AdID),
+			Bid:         data.Bid,
 		}
 
 		// Marshal to Protobuf

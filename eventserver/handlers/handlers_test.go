@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"bytes"
 	"io/ioutil"
 	"net/http"
@@ -27,7 +28,7 @@ func setupEnv() {
 // Mock TokenHandler
 type MockTokenHandler struct{}
 
-func (m *MockTokenHandler) GenerateToken(interaction dto.InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error) {
+func (m *MockTokenHandler) GenerateToken(interaction models.AdsInteractionType, adID, publisherID uint, bid int64, redirectPath string, key []byte) (string, error) {
 	// Not needed for these tests
 	return "duplicate", nil
 }
@@ -35,11 +36,12 @@ func (m *MockTokenHandler) GenerateToken(interaction dto.InteractionType, adID u
 func (m *MockTokenHandler) VerifyToken(encryptedToken string, key []byte) (*dto.CustomToken, error) {
 	// Return a mock token
 	return &dto.CustomToken{
-		Interaction:       dto.ClickType,
-		AdID:              123,
-		PublisherUsername: "user1",
-		RedirectPath:      "http://example.com",
-		CreatedAt:         time.Now().Unix(),
+		Interaction:  models.Click,
+		AdID:         123,
+		PublisherID:  234,
+		RedirectPath: "http://example.com",
+		CreatedAt:    time.Now().Unix(),
+		Bid:          1000,
 	}, nil
 }
 

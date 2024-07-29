@@ -32,7 +32,7 @@ func main() {
 		AllowAllOrigins: true,
 	}))
 
-	r.GET("/:publisherUsername", handler.GetAd)
+	r.GET("/:publisherId", handler.GetAd)
 	r.POST(os.Getenv("NOTIFY_API_PATH")+"/:adId", handler.BrakeAd)
 
 	port := os.Getenv("AD_SERVER_PORT")

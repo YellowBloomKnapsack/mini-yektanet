@@ -9,21 +9,21 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
-	"YellowBloomKnapsack/mini-yektanet/common/dto"
+	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
 )
 
 type AdServerHandler struct {
-	logicService  logic.LogicInterface
-	tokenHandler  tokenhandler.TokenHandlerInterface
+	logicService logic.LogicInterface
+	tokenHandler tokenhandler.TokenHandlerInterface
 }
 
 func NewAdServerHandler(logicService logic.LogicInterface, tokenHandler tokenhandler.TokenHandlerInterface) *AdServerHandler {
 	logicService.StartTicker()
 
 	return &AdServerHandler{
-		logicService:  logicService,
-		tokenHandler:  tokenHandler,
+		logicService: logicService,
+		tokenHandler: tokenHandler,
 	}
 }
 
@@ -41,13 +41,13 @@ func (h *AdServerHandler) GetAd(c *gin.Context) {
 	clickReqPath := os.Getenv("CLICK_REQ_PATH")
 	impressionReqPath := os.Getenv("IMPRESSION_REQ_PATH")
 
-	publisherUsername := c.Param("publisherUsername")
+	publisherId, _ := strconv.Atoi(c.Param("publisherId"))
 
 	privateKey := os.Getenv("PRIVATE_KEY")
 	key, _ := base64.StdEncoding.DecodeString(privateKey)
 
-	clickToken, _ := h.tokenHandler.GenerateToken(dto.ClickType, chosenAd.ID, publisherUsername, chosenAd.Website, key)
-	impressionToken, _ := h.tokenHandler.GenerateToken(dto.ImpressionType, chosenAd.ID, publisherUsername, chosenAd.Website, key)
+	clickToken, _ := h.tokenHandler.GenerateToken(models.Click, chosenAd.ID, uint(publisherId), chosenAd.Bid, chosenAd.Website, key)
+	impressionToken, _ := h.tokenHandler.GenerateToken(models.Impression, chosenAd.ID, uint(publisherId), chosenAd.Bid, chosenAd.Website, key)
 
 	c.JSON(http.StatusOK, gin.H{
 		"image_link":       chosenAd.ImagePath,

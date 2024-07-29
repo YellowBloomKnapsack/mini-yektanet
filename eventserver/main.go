@@ -2,8 +2,6 @@ package main
 
 import (
 	"YellowBloomKnapsack/mini-yektanet/eventserver/cache"
-	"log"
-	"os"
 
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
 	"YellowBloomKnapsack/mini-yektanet/eventserver/handlers"

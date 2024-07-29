@@ -35,11 +35,12 @@ func NewKafkaProducer() ProducerInterface {
 }
 
 func (p *KafkaProducer) Produce(protoData []byte, topicName string) error {
-	fmt.Println("meoooooooooooooooooooooooow")
+	fmt.Println("Producing message to topic " + topicName)
 	err := p.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topicName, Partition: kafka.PartitionAny},
 		Value:          protoData,
 	}, nil)
 
+	p.producer.Flush(10000)
 	return err
 }
