@@ -60,31 +60,34 @@ func (h *EventServerHandler) PostClick(c *gin.Context) {
 		return
 	}
 
-	present := h.cacheService.IsPresent(token)
-	if !present {
-		h.cacheService.Add(token)
-		eventData := &dto.ClickEvent{
-			PublisherId: uint32(data.PublisherID),
-			EventTime:   time.Now().Format(time.RFC3339),
-			AdId:        uint32(data.AdID),
-			Bid:         data.Bid,
-		}
-
-		// Marshal to Protobuf
-		protoData, err := proto.Marshal(eventData)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
-		}
-
-		err = h.producer.Produce(protoData, h.clickTopic)
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
-			return
-		}
-	}
-
 	c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
+
+	// Running in goroutine so the server would respond without needing to execute all of this code
+	go func() {
+		present := h.cacheService.IsPresent(token)
+		if !present {
+			h.cacheService.Add(token)
+			eventData := &dto.ClickEvent{
+				PublisherId: uint32(data.PublisherID),
+				EventTime:   time.Now().Format(time.RFC3339),
+				AdId:        uint32(data.AdID),
+				Bid:         data.Bid,
+			}
+
+			// Marshal to Protobuf
+			protoData, err := proto.Marshal(eventData)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
+			}
+
+			err = h.producer.Produce(protoData, h.clickTopic)
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
+				return
+			}
+		}
+	}()
 }
 
 // PostImpression handles impression events and produces them to a Kafka topic.
@@ -108,29 +111,32 @@ func (h *EventServerHandler) PostImpression(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
 	}
+	
+	// Running in goroutine so the server would respond without needing to execute all of this code
+	go func() {
+		present := h.cacheService.IsPresent(token)
+		if !present {
+			h.cacheService.Add(token)
 
-	present := h.cacheService.IsPresent(token)
-	if !present {
-		h.cacheService.Add(token)
+			eventData := &dto.ImpressionEvent{
+				PublisherId: uint32(data.PublisherID),
+				EventTime:   time.Now().Format(time.RFC3339),
+				AdId:        uint32(data.AdID),
+				Bid:         data.Bid,
+			}
 
-		eventData := &dto.ImpressionEvent{
-			PublisherId: uint32(data.PublisherID),
-			EventTime:   time.Now().Format(time.RFC3339),
-			AdId:        uint32(data.AdID),
-			Bid:         data.Bid,
+			// Marshal to Protobuf
+			protoData, err := proto.Marshal(eventData)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
+			}
+
+			err = h.producer.Produce(protoData, h.impressionTopic)
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
+				return
+			}
 		}
-
-		// Marshal to Protobuf
-		protoData, err := proto.Marshal(eventData)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
-		}
-
-		err = h.producer.Produce(protoData, h.impressionTopic)
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
-			return
-		}
-	}
+	}()
 }

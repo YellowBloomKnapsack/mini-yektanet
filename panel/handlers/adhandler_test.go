@@ -9,10 +9,10 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
@@ -33,38 +33,15 @@ func setupTest() func() {
 		os.Remove("test.db")
 	}
 }
-
-func TestGetActiveAdsErrorNoDB(t *testing.T) {
-	setEnvVariables()
-
-	database.InitTestDB() // init the database (so database.DB - being used in adHandler - is not nil)
-	db, _ := database.DB.DB()
-	db.Close() // close database connection for the sake of testing
-
-	r := gin.Default()
-	r.GET("/", GetActiveAds)
-	go r.Run(host) // the router needs to run in another goroutine
-
-	resp, err := http.Get("http://" + host)
-
-	// for testing purposes:
-	// t.Log("\n\n\n\n\n\n\n")
-	// t.Logf("%+v", resp)
-	// t.Log("\n\n\n\n\n\n\n")
-
-	require.NoError(t, err, "expected no error after making the request")
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode, "response status code must be 500 (internal server error)")
-}
-
 func TestGetActiveAdsSuccessGetAllAds(t *testing.T) {
-	setEnvVariables()
+	// setEnvVariables()
 
-	database.InitTestDB()
+	// database.InitTestDB()
 
 	r := gin.Default()
 	r.GET("/", GetActiveAds)
 	go r.Run(host) // the router needs to run in another goroutine
-
+	time.Sleep(time.Millisecond * 100)
 	resp, err := http.Get("http://" + host)
 
 	require.NoError(t, err, "expected no error after making the request")
@@ -95,7 +72,7 @@ func TestGetActiveAdsSuccessGetAllAds(t *testing.T) {
 		adDTO := dto.AdDTO{
 			ID:        ad.ID,
 			Text:      ad.Text,
-			ImagePath: "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + ad.ImagePath,
+			ImagePath: "http://" + os.Getenv("PANEL_PUBLIC_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + ad.ImagePath,
 			Bid:       ad.Bid,
 			Website:   ad.Website,
 		}

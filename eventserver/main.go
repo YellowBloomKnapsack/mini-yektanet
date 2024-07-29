@@ -42,5 +42,5 @@ func main() {
 	if port == "" {
 		port = "8082"
 	}
-	r.Run(os.Getenv("EVENT_SERVER_HOSTNAME") + ":" + port)
+	r.Run(os.Getenv("GIN_HOSTNAME") + ":" + port)
 }
