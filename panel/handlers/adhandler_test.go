@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -21,6 +22,17 @@ import (
 
 const host string = "localhost:8090"
 
+func setupTest() func() {
+	godotenv.Load("../.env", "../../common/.env", "../../publisherwebsite/.env", "../../adserver/.env")
+	os.Setenv("INTERACTION_CLICK_API", "/click")
+	os.Setenv("INTERACTION_IMPRESSION_API", "/impression")
+	os.Setenv("TEST_DB_PATH", "test.db")
+	database.InitTestDB()
+	fmt.Println("Test database initialized")
+	return func() {
+		os.Remove("test.db")
+	}
+}
 func TestGetActiveAdsSuccessGetAllAds(t *testing.T) {
 	// setEnvVariables()
 

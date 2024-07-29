@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"net/http"
+	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"bytes"
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
@@ -15,10 +16,19 @@ import (
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
 
+func setupEnv() {
+	os.Setenv("EVENT_SERVER_PORT", "8082")
+	os.Setenv("REDIS_BF_INIT_SIZE", "6000000")
+	os.Setenv("REDIS_BF_ERR_RATE", "0.01")
+	os.Setenv("EVENT_SERVER_HOSTNAME", "localhost")
+	os.Setenv("KAFKA_TOPIC_CLICK", "click_events")
+	os.Setenv("KAFKA_TOPIC_IMPRESSION", "impression_events")
+}
+
 // Mock TokenHandler
 type MockTokenHandler struct{}
 
-func (m *MockTokenHandler) GenerateToken(interaction dto.InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error) {
+func (m *MockTokenHandler) GenerateToken(interaction models.AdsInteractionType, adID, publisherID uint, bid int64, redirectPath string, key []byte) (string, error) {
 	// Not needed for these tests
 	return "duplicate", nil
 }
@@ -26,34 +36,13 @@ func (m *MockTokenHandler) GenerateToken(interaction dto.InteractionType, adID u
 func (m *MockTokenHandler) VerifyToken(encryptedToken string, key []byte) (*dto.CustomToken, error) {
 	// Return a mock token
 	return &dto.CustomToken{
-		Interaction:       dto.ClickType,
-		AdID:              123,
-		PublisherUsername: "user1",
-		RedirectPath:      "http://example.com",
-		CreatedAt:         time.Now().Unix(),
+		Interaction:  models.Click,
+		AdID:         123,
+		PublisherID:  234,
+		RedirectPath: "http://example.com",
+		CreatedAt:    time.Now().Unix(),
+		Bid:          1000,
 	}, nil
-}
-
-// Mock WorkerService
-type MockWorkerService struct {
-	clickEventCalled      bool
-	impressionEventCalled bool
-	clickEventData        *dto.CustomToken
-	impressionEventData   *dto.CustomToken
-}
-
-func (m *MockWorkerService) Start() {
-	// Not needed for these tests
-}
-
-func (m *MockWorkerService) InvokeClickEvent(data *dto.CustomToken, clickTime time.Time) {
-	m.clickEventCalled = true
-	m.clickEventData = data
-}
-
-func (m *MockWorkerService) InvokeImpressionEvent(data *dto.CustomToken, impressionTime time.Time) {
-	m.impressionEventCalled = true
-	m.impressionEventData = data
 }
 
 // Mock CacheService
@@ -69,15 +58,31 @@ func (m *MockCacheService) Add(token string) {
 	m.times++
 }
 
+type MockProducerService struct {
+	impCnt   int
+	clickCnt int
+}
+
+func (p *MockProducerService) Produce(payload []byte, topic string) error {
+	if topic == os.Getenv("KAFKA_TOPIC_CLICK") {
+		p.clickCnt++
+	} else if topic == os.Getenv("KAFKA_TOPIC_IMPRESSION") {
+		p.impCnt++
+	}
+	return nil
+}
+
 func TestPostClick(t *testing.T) {
+	setupEnv()
+
 	privateKey := "c2VjcmV0" // base64 for 'secret'
 	os.Setenv("PRIVATE_KEY", privateKey)
 
 	mockTokenHandler := &MockTokenHandler{}
-	mockWorkerService := &MockWorkerService{}
 	mockCacheService := &MockCacheService{times: 0}
+	mockProducerService := &MockProducerService{clickCnt: 0, impCnt: 0}
 
-	handler := NewEventServerHandler(mockTokenHandler, mockWorkerService, mockCacheService)
+	handler := NewEventServerHandler(mockTokenHandler, mockCacheService, mockProducerService)
 
 	r := gin.Default()
 	r.POST("/click", handler.PostClick)
@@ -90,11 +95,8 @@ func TestPostClick(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusMovedPermanently, w.Code)
-	assert.True(t, mockWorkerService.clickEventCalled)
-	assert.NotNil(t, mockWorkerService.clickEventData)
-	assert.Equal(t, "user1", mockWorkerService.clickEventData.PublisherUsername)
-	assert.Equal(t, uint(123), mockWorkerService.clickEventData.AdID)
-	assert.Equal(t, "http://example.com", mockWorkerService.clickEventData.RedirectPath)
+	assert.Equal(t, mockProducerService.clickCnt, 1)
+	assert.Equal(t, mockProducerService.impCnt, 0)
 
 	// Request should not be send
 	req = httptest.NewRequest(http.MethodPost, "/click", nil)
@@ -105,17 +107,21 @@ func TestPostClick(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, w.Body.Len(), 0)
+	assert.Equal(t, mockProducerService.clickCnt, 1)
+	assert.Equal(t, mockProducerService.impCnt, 0)
 }
 
 func TestPostImpression(t *testing.T) {
+	setupEnv()
+
 	privateKey := "c2VjcmV0" // base64 for 'secret'
 	os.Setenv("PRIVATE_KEY", privateKey)
 
 	mockTokenHandler := &MockTokenHandler{}
-	mockWorkerService := &MockWorkerService{}
 	mockCacheService := &MockCacheService{times: 0}
+	mockProducerService := &MockProducerService{clickCnt: 0, impCnt: 0}
 
-	handler := NewEventServerHandler(mockTokenHandler, mockWorkerService, mockCacheService)
+	handler := NewEventServerHandler(mockTokenHandler, mockCacheService, mockProducerService)
 
 	r := gin.Default()
 	r.POST("/impression", handler.PostImpression)
@@ -128,10 +134,8 @@ func TestPostImpression(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.True(t, mockWorkerService.impressionEventCalled)
-	assert.NotNil(t, mockWorkerService.impressionEventData)
-	assert.Equal(t, "user1", mockWorkerService.impressionEventData.PublisherUsername)
-	assert.Equal(t, uint(123), mockWorkerService.impressionEventData.AdID)
+	assert.Equal(t, mockProducerService.clickCnt, 0)
+	assert.Equal(t, mockProducerService.impCnt, 1)
 
 	// Request should not be send
 	req = httptest.NewRequest(http.MethodPost, "/impression", nil)
@@ -142,5 +146,6 @@ func TestPostImpression(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, w.Body.Len(), 0)
+	assert.Equal(t, mockProducerService.clickCnt, 0)
+	assert.Equal(t, mockProducerService.impCnt, 1)
 }
-

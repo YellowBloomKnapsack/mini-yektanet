@@ -7,45 +7,31 @@ import (
 	"os"
 	"time"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/protobuf/proto"
 
 	"YellowBloomKnapsack/mini-yektanet/common/cache"
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
+	"YellowBloomKnapsack/mini-yektanet/eventserver/producer"
 )
 
 type EventServerHandler struct {
-	tokenHandler         tokenhandler.TokenHandlerInterface
-	cacheService         cache.CacheInterface
-	kafkaProducer        *kafka.Producer
-	kafkaTopicClick      string
-	kafkaTopicImpression string
+	tokenHandler    tokenhandler.TokenHandlerInterface
+	cacheService    cache.CacheInterface
+	producer        producer.ProducerInterface
+	clickTopic      string
+	impressionTopic string
 }
 
 // NewEventServerHandler initializes the event server handler with a Kafka producer.
-func NewEventServerHandler(tokenHandler tokenhandler.TokenHandlerInterface, cacheService cache.CacheInterface) *EventServerHandler {
-	kafkaBootstrapServers := os.Getenv("KAFKA_BOOTSTRAP_SERVERS")
-	kafkaBootstrapServers = kafkaBootstrapServers + ":9092"
-	if kafkaBootstrapServers == "" {
-		panic("KAFKA_BOOTSTRAP_SERVERS environment variable is not set")
-	}
-
-	// Initialize Kafka producer
-	kafkaProducer, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": kafkaBootstrapServers,
-	})
-	if err != nil {
-		panic(fmt.Sprintf("Failed to create Kafka producer: %s", err))
-	}
-
+func NewEventServerHandler(tokenHandler tokenhandler.TokenHandlerInterface, cacheService cache.CacheInterface, producerService producer.ProducerInterface) *EventServerHandler {
 	return &EventServerHandler{
-		tokenHandler:         tokenHandler,
-		cacheService:         cacheService,
-		kafkaProducer:        kafkaProducer,
-		kafkaTopicClick:      os.Getenv("KAFKA_TOPIC_CLICK"),
-		kafkaTopicImpression: os.Getenv("KAFKA_TOPIC_IMPRESSION"),
+		tokenHandler:    tokenHandler,
+		cacheService:    cacheService,
+		producer:        producerService,
+		clickTopic:      os.Getenv("KAFKA_TOPIC_CLICK"),
+		impressionTopic: os.Getenv("KAFKA_TOPIC_IMPRESSION"),
 	}
 }
 
@@ -78,7 +64,21 @@ func (h *EventServerHandler) PostClick(c *gin.Context) {
 	present := h.cacheService.IsPresent(token)
 	if !present {
 		h.cacheService.Add(token)
-		err = h.produceClickEvent(data, time.Now())
+		eventData := &dto.ClickEvent{
+			PublisherId: uint32(data.PublisherID),
+			EventTime:   time.Now().Format(time.RFC3339),
+			AdId:        uint32(data.AdID),
+			Bid:         data.Bid,
+		}
+
+		// Marshal to Protobuf
+		protoData, err := proto.Marshal(eventData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
+		}
+
+		err = h.producer.Produce(protoData, h.clickTopic)
+
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
 			return
@@ -113,94 +113,25 @@ func (h *EventServerHandler) PostImpression(c *gin.Context) {
 	present := h.cacheService.IsPresent(token)
 	if !present {
 		h.cacheService.Add(token)
-		err = h.produceImpressionEvent(data, time.Now())
+
+		eventData := &dto.ImpressionEvent{
+			PublisherId: uint32(data.PublisherID),
+			EventTime:   time.Now().Format(time.RFC3339),
+			AdId:        uint32(data.AdID),
+			Bid:         data.Bid,
+		}
+
+		// Marshal to Protobuf
+		protoData, err := proto.Marshal(eventData)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce impression event"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
+		}
+
+		err = h.producer.Produce(protoData, h.impressionTopic)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
 			return
 		}
 	}
-}
-
-// produceClickEvent sends a click event to the Kafka topic.
-func (h *EventServerHandler) produceClickEvent(data *dto.CustomToken, clickTime time.Time) error {
-	eventData := &dto.ClickEvent{
-		PublisherUsername: data.PublisherUsername,
-		EventTime:         clickTime.Format(time.RFC3339),
-		AdId:              uint32(data.AdID),
-	}
-
-	// Marshal to Protobuf
-	protoData, err := proto.Marshal(eventData)
-	if err != nil {
-		fmt.Printf("Failed to marshal click event to protobuf: %v\n", err)
-		return err
-	}
-
-	// Produce message to Kafka
-	deliveryChan := make(chan kafka.Event)
-	defer close(deliveryChan)
-
-	err = h.kafkaProducer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &h.kafkaTopicClick, Partition: kafka.PartitionAny},
-		Value:          protoData,
-	}, deliveryChan)
-
-	if err != nil {
-		fmt.Printf("Failed to produce click event to Kafka: %v\n", err)
-		return err
-	}
-
-	// Wait for message delivery
-	e := <-deliveryChan
-	m := e.(*kafka.Message)
-	if m.TopicPartition.Error != nil {
-		fmt.Printf("Delivery failed: %v\n", m.TopicPartition.Error)
-		return m.TopicPartition.Error
-	}
-
-	fmt.Printf("Delivered message to topic %s [%d] at offset %v\n",
-		*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
-	return nil
-}
-
-// produceImpressionEvent sends an impression event to the Kafka topic.
-func (h *EventServerHandler) produceImpressionEvent(data *dto.CustomToken, impressionTime time.Time) error {
-	eventData := &dto.ImpressionEvent{
-		PublisherUsername: data.PublisherUsername,
-		EventTime:         impressionTime.Format(time.RFC3339),
-		AdId:              uint32(data.AdID),
-	}
-
-	// Marshal to Protobuf
-	protoData, err := proto.Marshal(eventData)
-	if err != nil {
-		fmt.Printf("Failed to marshal impression event to protobuf: %v\n", err)
-		return err
-	}
-
-	// Produce message to Kafka
-	deliveryChan := make(chan kafka.Event)
-	defer close(deliveryChan)
-
-	err = h.kafkaProducer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &h.kafkaTopicImpression, Partition: kafka.PartitionAny},
-		Value:          protoData,
-	}, deliveryChan)
-
-	if err != nil {
-		fmt.Printf("Failed to produce impression event to Kafka: %v\n", err)
-		return err
-	}
-
-	// Wait for message delivery
-	e := <-deliveryChan
-	m := e.(*kafka.Message)
-	if m.TopicPartition.Error != nil {
-		fmt.Printf("Delivery failed: %v\n", m.TopicPartition.Error)
-		return m.TopicPartition.Error
-	}
-
-	fmt.Printf("Delivered message to topic %s [%d] at offset %v\n",
-		*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
-	return nil
 }

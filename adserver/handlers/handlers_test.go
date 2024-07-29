@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -36,7 +37,7 @@ type MockTokenHandler struct {
 	GenerateTokenError  error
 }
 
-func (m *MockTokenHandler) GenerateToken(interaction dto.InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error) {
+func (m *MockTokenHandler) GenerateToken(interaction models.AdsInteractionType, adID, publisherID uint, bid int64, redirectPath string, key []byte) (string, error) {
 	return m.GenerateTokenResult, m.GenerateTokenError
 }
 
@@ -117,7 +118,7 @@ func (m *MockLogicService_Brake) BrakeAd(adId uint) {
 	m.BrakeAdCalled = true
 	m.BrakeAdAdId = adId
 	brakeSeconds, _ := strconv.Atoi(os.Getenv("BRAKE_DURATION_SECS"))
-	m.BrakeAdDuration = time.Duration(brakeSeconds)*time.Second
+	m.BrakeAdDuration = time.Duration(brakeSeconds) * time.Second
 }
 
 // TestBrakeAdHandler tests the BrakeAd handler function
@@ -132,7 +133,7 @@ func TestBrakeAdHandler(t *testing.T) {
 	}
 
 	handler := &AdServerHandler{
-		logicService:  mockLogicService,
+		logicService: mockLogicService,
 	}
 
 	// Register the route and handler

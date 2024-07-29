@@ -8,10 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
+	"YellowBloomKnapsack/mini-yektanet/adserver/cache"
 	"YellowBloomKnapsack/mini-yektanet/adserver/handlers"
 	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
-	"YellowBloomKnapsack/mini-yektanet/adserver/cache"
 )
 
 func main() {
@@ -20,11 +20,9 @@ func main() {
 	}
 
 	tokenHandler := tokenhandler.NewTokenHandlerService()
-
 	redisUrl := os.Getenv("REDIS_URL")
-	cache := cache.NewAdServerCache(redisUrl)
-
-	logicService := logic.NewLogicService(cache)
+	cacheService := cache.NewAdServerCache(redisUrl)
+	logicService := logic.NewLogicService(cacheService)
 
 	handler := handlers.NewAdServerHandler(logicService, tokenHandler)
 
@@ -34,7 +32,7 @@ func main() {
 		AllowAllOrigins: true,
 	}))
 
-	r.GET("/:publisherUsername", handler.GetAd)
+	r.GET("/:publisherId", handler.GetAd)
 	r.POST(os.Getenv("NOTIFY_API_PATH")+"/:adId", handler.BrakeAd)
 
 	port := os.Getenv("AD_SERVER_PORT")

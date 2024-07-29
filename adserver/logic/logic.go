@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/cache"
+	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
 
 type LogicInterface interface {
@@ -21,21 +21,21 @@ type LogicInterface interface {
 }
 
 type LogicService struct {
-	visitedAds    []*dto.AdDTO
-	unvisitedAds  []*dto.AdDTO
+	visitedAds     []*dto.AdDTO
+	unvisitedAds   []*dto.AdDTO
 	brakedAdsCache cache.CacheInterface
-	getAdsAPIPath string
-	interval      int
+	getAdsAPIPath  string
+	interval       int
 }
 
 func NewLogicService(cache cache.CacheInterface) LogicInterface {
 	interval, _ := strconv.Atoi(os.Getenv("ADS_FETCH_INTERVAL_SECS"))
 	return &LogicService{
-		visitedAds:    make([]*dto.AdDTO, 0),
-		unvisitedAds:  make([]*dto.AdDTO, 0),
+		visitedAds:     make([]*dto.AdDTO, 0),
+		unvisitedAds:   make([]*dto.AdDTO, 0),
 		brakedAdsCache: cache,
-		getAdsAPIPath: "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API"),
-		interval:      interval,
+		getAdsAPIPath:  "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API"),
+		interval:       interval,
 	}
 }
 

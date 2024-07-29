@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/panel/handlers"
+	"YellowBloomKnapsack/mini-yektanet/panel/reporter"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -17,7 +20,16 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	fmt.Println("Listening on port ")
 	database.InitDB()
+
+	clickTopic := os.Getenv("KAFKA_TOPIC_CLICK")
+	impressionTopic := os.Getenv("KAFKA_TOPIC_IMPRESSION")
+	clickBuffLimit, _ := strconv.Atoi(os.Getenv("KAFKA_CLICK_BUFF_LIMIT"))
+	impressionBuffLimit, _ := strconv.Atoi(os.Getenv("KAFKA_IMPRESSION_BUFF_LIMIT"))
+
+	reporterService := reporter.NewReporterService(clickTopic, impressionTopic, clickBuffLimit, impressionBuffLimit)
+	reporterService.Start()
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
@@ -43,8 +55,6 @@ func main() {
 		publisher.POST("/:username/withdraw", handlers.WithdrawPublisherBalance)
 	}
 	r.GET(os.Getenv("GET_ADS_API"), handlers.GetActiveAds)
-	r.POST(os.Getenv("INTERACTION_CLICK_API"), handlers.HandleClickAdInteraction)
-	r.POST(os.Getenv("INTERACTION_IMPRESSION_API"), handlers.HandleImpressionAdInteraction)
 
 	port := os.Getenv("PANEL_PORT")
 	if port == "" {

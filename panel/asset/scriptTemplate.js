@@ -1,7 +1,7 @@
-const publisherName = "%s"
+const publisherId = parseInt("%d")
 const AdServerAPILink = "%s"
 
-fetch(AdServerAPILink+"/"+publisherName)
+fetch(AdServerAPILink+"/"+publisherId)
 .then((res) => {
     if (!res.ok) {
         throw new Error("unable to load from ad server.")

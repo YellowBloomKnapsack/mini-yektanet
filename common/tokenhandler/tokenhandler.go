@@ -11,10 +11,11 @@ import (
 	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
+	"YellowBloomKnapsack/mini-yektanet/common/models"
 )
 
 type TokenHandlerInterface interface {
-	GenerateToken(interaction dto.InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error)
+	GenerateToken(interaction models.AdsInteractionType, adID, publisherID uint, bid int64, redirectPath string, key []byte) (string, error)
 	VerifyToken(encryptedToken string, key []byte) (*dto.CustomToken, error)
 }
 
@@ -44,13 +45,14 @@ func (th *TokenHandlerService) encrypt(data []byte, key []byte) (string, error) 
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-func (th *TokenHandlerService) GenerateToken(interaction dto.InteractionType, adID uint, publisherUsername, redirectPath string, key []byte) (string, error) {
+func (th *TokenHandlerService) GenerateToken(interaction models.AdsInteractionType, adID, publisherID uint, bid int64, redirectPath string, key []byte) (string, error) {
 	token := dto.CustomToken{
-		Interaction:       interaction,
-		AdID:              adID,
-		PublisherUsername: publisherUsername,
-		RedirectPath:      redirectPath,
-		CreatedAt:         time.Now().Unix(),
+		Interaction:  interaction,
+		AdID:         adID,
+		PublisherID:  publisherID,
+		Bid:          bid,
+		RedirectPath: redirectPath,
+		CreatedAt:    time.Now().Unix(),
 	}
 
 	tokenBytes, err := json.Marshal(token)
