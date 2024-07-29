@@ -61,9 +61,7 @@ func (h *EventServerHandler) PostClick(c *gin.Context) {
 		return
 	}
 
-	fmt.Println("Token is hereeeeeeeeeee " + token)
 	present := h.cacheService.IsPresent(token)
-	fmt.Println(present)
 	if !present {
 		h.cacheService.Add(token)
 		eventData := &dto.ClickEvent{
@@ -116,8 +114,6 @@ func (h *EventServerHandler) PostImpression(c *gin.Context) {
 	if !present {
 		h.cacheService.Add(token)
 
-		fmt.Println("meoooooooow and ")
-		fmt.Println(data.PublisherID)
 		eventData := &dto.ImpressionEvent{
 			PublisherId: uint32(data.PublisherID),
 			EventTime:   time.Now().Format(time.RFC3339),
