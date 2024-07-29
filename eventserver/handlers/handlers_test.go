@@ -23,6 +23,7 @@ func setupEnv() {
 	os.Setenv("EVENT_SERVER_HOSTNAME", "localhost")
 	os.Setenv("KAFKA_TOPIC_CLICK", "click_events")
 	os.Setenv("KAFKA_TOPIC_IMPRESSION", "impression_events")
+	os.Setenv("PRIVATE_KEY", "c2VjcmV0")
 }
 
 // Mock TokenHandler
@@ -71,12 +72,52 @@ func (p *MockProducerService) Produce(payload []byte, topic string) error {
 	}
 	return nil
 }
+func TestProduceImpressionIfTokenValid(t *testing.T) {
+	setupEnv()
+
+	mockTokenHandler := &MockTokenHandler{}
+	mockCacheService := &MockCacheService{times: 0}
+	mockProducerService := &MockProducerService{clickCnt: 0, impCnt: 0}
+
+	handler := NewEventServerHandler(mockTokenHandler, mockCacheService, mockProducerService)
+
+	data, _ := mockTokenHandler.VerifyToken("", []byte(""))
+
+	handler.produceImpressionIfTokenValid("", data)
+
+	assert.Equal(t, mockProducerService.clickCnt, 0)
+	assert.Equal(t, mockProducerService.impCnt, 1)
+
+	handler.produceImpressionIfTokenValid("", data)
+
+	assert.Equal(t, mockProducerService.clickCnt, 0)
+	assert.Equal(t, mockProducerService.impCnt, 1)
+}
+
+func TestProduceClickIfTokenValid(t *testing.T) {
+	setupEnv()
+
+	mockTokenHandler := &MockTokenHandler{}
+	mockCacheService := &MockCacheService{times: 0}
+	mockProducerService := &MockProducerService{clickCnt: 0, impCnt: 0}
+
+	handler := NewEventServerHandler(mockTokenHandler, mockCacheService, mockProducerService)
+
+	data, _ := mockTokenHandler.VerifyToken("", []byte(""))
+
+	handler.produceClickIfTokenValid("", data)
+
+	assert.Equal(t, mockProducerService.clickCnt, 1)
+	assert.Equal(t, mockProducerService.impCnt, 0)
+
+	handler.produceClickIfTokenValid("", data)
+
+	assert.Equal(t, mockProducerService.clickCnt, 1)
+	assert.Equal(t, mockProducerService.impCnt, 0)
+}
 
 func TestPostClick(t *testing.T) {
 	setupEnv()
-
-	privateKey := "c2VjcmV0" // base64 for 'secret'
-	os.Setenv("PRIVATE_KEY", privateKey)
 
 	mockTokenHandler := &MockTokenHandler{}
 	mockCacheService := &MockCacheService{times: 0}
@@ -95,27 +136,10 @@ func TestPostClick(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusMovedPermanently, w.Code)
-	assert.Equal(t, mockProducerService.clickCnt, 1)
-	assert.Equal(t, mockProducerService.impCnt, 0)
-
-	// Request should not be send
-	req = httptest.NewRequest(http.MethodPost, "/click", nil)
-	req.Header.Set("Content-Type", "application/json")
-	req.Body = ioutil.NopCloser(bytes.NewReader([]byte(`{"token":"dummy-token"}`)))
-
-	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, w.Body.Len(), 0)
-	assert.Equal(t, mockProducerService.clickCnt, 1)
-	assert.Equal(t, mockProducerService.impCnt, 0)
 }
 
 func TestPostImpression(t *testing.T) {
 	setupEnv()
-
-	privateKey := "c2VjcmV0" // base64 for 'secret'
-	os.Setenv("PRIVATE_KEY", privateKey)
 
 	mockTokenHandler := &MockTokenHandler{}
 	mockCacheService := &MockCacheService{times: 0}
@@ -134,18 +158,4 @@ func TestPostImpression(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, mockProducerService.clickCnt, 0)
-	assert.Equal(t, mockProducerService.impCnt, 1)
-
-	// Request should not be send
-	req = httptest.NewRequest(http.MethodPost, "/impression", nil)
-	req.Header.Set("Content-Type", "application/json")
-	req.Body = ioutil.NopCloser(bytes.NewReader([]byte(`{"token":"dummy-token"}`)))
-
-	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, w.Body.Len(), 0)
-	assert.Equal(t, mockProducerService.clickCnt, 0)
-	assert.Equal(t, mockProducerService.impCnt, 1)
 }

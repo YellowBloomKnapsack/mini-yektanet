@@ -43,12 +43,12 @@ func newConsumerService(kafkaBootstrapServers, topic string, buffLimit int, hand
 		"group.id":          "yektanet-reporter-" + topic,
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Failed to create kafka consumer: %v", err)
 	}
 
 	err = kafkaConsumer.Subscribe(topic, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Failed to subscribe to topic %s: %v", topic, err)
 	}
 
 	return &ConsumerService{
