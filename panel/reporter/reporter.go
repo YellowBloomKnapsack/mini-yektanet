@@ -105,8 +105,17 @@ func NewReporterService(clickTopic, impressionTopic string, clickBuffLimit, impr
 		log.Fatal("KAFKA_BOOTSTRAP_SERVERS environment variable is not set")
 	}
 
-	// Define a timeout duration (e.g., 10 seconds)
-	timeout := 10 * time.Second
+	timeoutStr := os.Getenv("TIMEOUT")
+	if timeoutStr == "" {
+		log.Fatal("TIMEOUT environment variable is not set")
+	}
+
+	timeoutInt, err := strconv.Atoi(timeoutStr)
+	if err != nil {
+		log.Fatalf("Invalid TIMEOUT value: %v", err)
+	}
+
+	timeout := time.Duration(timeoutInt) * time.Second
 
 	consumers := []*ConsumerService{
 		newConsumerService(kafkaBootstrapServers, clickTopic, clickBuffLimit, handleClick, timeout),
