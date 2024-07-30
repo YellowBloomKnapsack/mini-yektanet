@@ -45,7 +45,7 @@ jobs:
           # Clone or pull the latest changes
           if [ -d .git ]; then
             git restore .
-            git pull
+            git pull origin main
           else
             git clone https://github.com/YellowBloomKnapsack/mini-yektanet.git .
           fi
