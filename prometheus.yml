@@ -10,10 +10,10 @@ scrape_configs:
     static_configs:
       - targets: ['panel:8083', 'publisherwebsite:8084', 'adserver:8081', 'eventserver:8082']
     metrics_path: '/metrics'
-    
+
   - job_name: 'redis'
-  static_configs:
-    - targets: ['redis-exporter:9121']
+    static_configs:
+      - targets: ['redis-exporter:9121']
 
   - job_name: 'kafka'
     static_configs:
