@@ -22,6 +22,10 @@ scrape_configs:
   - job_name: 'postgres'
     static_configs:
       - targets: ['postgres-exporter:9187']
+
+  - job_name: 'zookeeper'
+    static_configs:
+      - targets: ['zookeeper-exporter:9141']
   # - job_name: 'redis'
   #   static_configs:
   #     - targets: ['redis:6379']
