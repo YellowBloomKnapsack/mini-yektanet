@@ -80,7 +80,7 @@ services:
       context: .
       dockerfile: Dockerfile.redis
    ports:
-     - "6379"
+     - "6379:6379"
     volumes:
       - redis-data:/data
     # command: redis-server --appendonly yes --loadmodule /opt/redis-stack/lib/redisbloom.so
