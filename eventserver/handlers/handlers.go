@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"encoding/base64"
+	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -60,29 +62,9 @@ func (h *EventServerHandler) PostClick(c *gin.Context) {
 		return
 	}
 
-	present := h.cacheService.IsPresent(token)
-	if !present {
-		h.cacheService.Add(token)
-		eventData := &dto.ClickEvent{
-			PublisherId: uint32(data.PublisherID),
-			EventTime:   time.Now().Format(time.RFC3339),
-			AdId:        uint32(data.AdID),
-			Bid:         data.Bid,
-		}
-
-		// Marshal to Protobuf
-		protoData, err := proto.Marshal(eventData)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
-		}
-
-		err = h.producer.Produce(protoData, h.clickTopic)
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
-			return
-		}
-	}
+	// Running in goroutine so the server wouldn't have to wait
+	go h.produceClickIfTokenValid(token, data)
+	fmt.Println("slkdfjdfkdfjgkdfldf")
 
 	c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
 }
@@ -109,28 +91,66 @@ func (h *EventServerHandler) PostImpression(c *gin.Context) {
 		return
 	}
 
+	// Running in goroutine so the server wouldn't have to wait
+	go h.produceImpressionIfTokenValid(token, data)
+}
+
+func (h *EventServerHandler) produceImpressionIfTokenValid(token string, data *dto.CustomToken) {
 	present := h.cacheService.IsPresent(token)
-	if !present {
-		h.cacheService.Add(token)
+	if present {
+		log.Printf("Token %s already present", token)
+		return
+	}
 
-		eventData := &dto.ImpressionEvent{
-			PublisherId: uint32(data.PublisherID),
-			EventTime:   time.Now().Format(time.RFC3339),
-			AdId:        uint32(data.AdID),
-			Bid:         data.Bid,
-		}
+	h.cacheService.Add(token)
 
-		// Marshal to Protobuf
-		protoData, err := proto.Marshal(eventData)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
-		}
+	eventData := &dto.ImpressionEvent{
+		PublisherId: uint32(data.PublisherID),
+		EventTime:   time.Now().Format(time.RFC3339),
+		AdId:        uint32(data.AdID),
+		Bid:         data.Bid,
+	}
 
-		err = h.producer.Produce(protoData, h.impressionTopic)
+	// Marshal to Protobuf
+	protoData, err := proto.Marshal(eventData)
+	if err != nil {
+		log.Println("Failed to marshal event data:", err)
+		return
+	}
 
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to produce click event"})
-			return
-		}
+	// Produce event
+	err = h.producer.Produce(protoData, h.impressionTopic)
+	if err != nil {
+		log.Println("Failed to produce impression:", err)
+		return
+	}
+}
+
+func (h *EventServerHandler) produceClickIfTokenValid(token string, data *dto.CustomToken) {
+	present := h.cacheService.IsPresent(token)
+	if present {
+		log.Printf("Token %s already present", token)
+		return
+	}
+
+	h.cacheService.Add(token)
+	eventData := &dto.ClickEvent{
+		PublisherId: uint32(data.PublisherID),
+		EventTime:   time.Now().Format(time.RFC3339),
+		AdId:        uint32(data.AdID),
+		Bid:         data.Bid,
+	}
+
+	// Marshal to Protobuf
+	protoData, err := proto.Marshal(eventData)
+	if err != nil {
+		log.Println("Failed to marshal event data:", err)
+		return
+	}
+
+	err = h.producer.Produce(protoData, h.clickTopic)
+	if err != nil {
+		log.Println("Failed to produce event:", err)
+		return
 	}
 }

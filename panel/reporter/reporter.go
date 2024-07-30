@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	//"context"
 	"fmt"
 	"log"
 	"os"
@@ -30,25 +29,26 @@ type ConsumerService struct {
 	buffLimit int
 	topic     string
 	handler   MessageHandlerFunc
+	timeout   time.Duration // Add a timeout field for the consumer service
 }
 
 type ReporterService struct {
 	consumers []*ConsumerService
 }
 
-func newConsumerService(kafkaBootstrapServers, topic string, buffLimit int, handler MessageHandlerFunc) *ConsumerService {
+func newConsumerService(kafkaBootstrapServers, topic string, buffLimit int, handler MessageHandlerFunc, timeout time.Duration) *ConsumerService {
 	kafkaConsumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": kafkaBootstrapServers,
 		"auto.offset.reset": "earliest",
 		"group.id":          "yektanet-reporter-" + topic,
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Failed to create kafka consumer: %v", err)
 	}
 
 	err = kafkaConsumer.Subscribe(topic, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Failed to subscribe to topic %s: %v", topic, err)
 	}
 
 	return &ConsumerService{
@@ -56,6 +56,7 @@ func newConsumerService(kafkaBootstrapServers, topic string, buffLimit int, hand
 		buffLimit: buffLimit,
 		topic:     topic,
 		handler:   handler,
+		timeout:   timeout,
 	}
 }
 
@@ -63,25 +64,39 @@ func (c *ConsumerService) Start() {
 	defer c.consumer.Close()
 
 	buffer := make([]kafka.Message, 0, c.buffLimit)
+	timer := time.NewTimer(c.timeout) // Create a new timer with the specified timeout
 
 	for {
-		msg, err := c.consumer.ReadMessage(100 * time.Millisecond)
-		if err != nil {
-			// Handle message reading errors
-			//log.Printf("Consumer error: %v\n", err)
-			continue
-		}
+		select {
+		case <-timer.C:
+			// If the timer expires, process the messages in the buffer
+			if len(buffer) > 0 {
+				fmt.Println("Timer expired, processing messages")
+				if err := c.handler(buffer); err != nil {
+					log.Printf("Error handling messages: %v", err)
+				}
 
-		buffer = append(buffer, *msg)
-		if len(buffer) >= c.buffLimit {
-			fmt.Println("Buffer full, clearing it")
-			if err := c.handler(buffer); err != nil {
-				log.Printf("Error handling message: %v", err)
+				buffer = make([]kafka.Message, 0)
+
 			}
-			buffer = make([]kafka.Message, 0) // Reset the buffer
+			timer.Reset(c.timeout)
+		default:
+			msg, err := c.consumer.ReadMessage(100 * time.Millisecond)
+			if err != nil {
+				continue
+			}
+
+			buffer = append(buffer, *msg)
+			if len(buffer) >= c.buffLimit {
+				fmt.Println("Buffer full, processing messages")
+				if err := c.handler(buffer); err != nil {
+					log.Printf("Error handling messages: %v", err)
+				}
+				buffer = make([]kafka.Message, 0)
+				timer.Reset(c.timeout)
+			}
 		}
 	}
-
 }
 
 func NewReporterService(clickTopic, impressionTopic string, clickBuffLimit, impressionBuffLimit int) ReporterInterface {
@@ -90,9 +105,21 @@ func NewReporterService(clickTopic, impressionTopic string, clickBuffLimit, impr
 		log.Fatal("KAFKA_BOOTSTRAP_SERVERS environment variable is not set")
 	}
 
+	timeoutStr := os.Getenv("TIMEOUT")
+	if timeoutStr == "" {
+		log.Fatal("TIMEOUT environment variable is not set")
+	}
+
+	timeoutInt, err := strconv.Atoi(timeoutStr)
+	if err != nil {
+		log.Fatalf("Invalid TIMEOUT value: %v", err)
+	}
+
+	timeout := time.Duration(timeoutInt) * time.Second
+
 	consumers := []*ConsumerService{
-		newConsumerService(kafkaBootstrapServers, clickTopic, clickBuffLimit, handleClick),
-		newConsumerService(kafkaBootstrapServers, impressionTopic, impressionBuffLimit, handleImpression),
+		newConsumerService(kafkaBootstrapServers, clickTopic, clickBuffLimit, handleClick, timeout),
+		newConsumerService(kafkaBootstrapServers, impressionTopic, impressionBuffLimit, handleImpression, timeout),
 	}
 
 	return &ReporterService{
@@ -119,7 +146,6 @@ func handleClick(messages []kafka.Message) error {
 		// Start a transaction
 		tx := database.DB.Begin()
 
-		// Find the publisher
 		var publisher models.Publisher
 		if err := tx.Where("id = ?", event.PublisherId).First(&publisher).Error; err != nil {
 			tx.Rollback()
@@ -249,6 +275,5 @@ func handleImpression(messages []kafka.Message) error {
 	if err := database.DB.Create(&interactionsToInsert).Error; err != nil {
 		return err
 	}
-	fmt.Println("///////////////////??????????????????????????????????5")
 	return nil
 }
