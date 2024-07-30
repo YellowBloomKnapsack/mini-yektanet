@@ -1,6 +1,10 @@
 package main
 
 import (
+	"time"
+	"log"
+	"os"
+
 	"YellowBloomKnapsack/mini-yektanet/eventserver/cache"
 
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
@@ -9,8 +13,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"log"
-	"os"
 )
 
 func main() {
@@ -21,7 +23,9 @@ func main() {
 	tokenHandler := tokenhandler.NewTokenHandlerService()
 	redisUrl := os.Getenv("REDIS_HOST")
 	redisUrl = redisUrl + ":6379"
-	cacheService := cache.NewEventServerCache(redisUrl)
+
+	cacheService := cache.NewEventServerCache(redisUrl, time.Duration(60)*time.Second) // periodic reset
+	// cacheService := cache.NewEventServerCache(redisUrl, time.Duration(0)) // daily reset
 	producerService := producer.NewKafkaProducer()
 
 	handler := handlers.NewEventServerHandler(tokenHandler, cacheService, producerService)
