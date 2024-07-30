@@ -136,8 +136,8 @@ services:
       # KAFKA_CREATE_TOPICS: "click_events:3:1,impression_events:3:1"
 
     volumes:
-      # - kafka-data:/var/lib/kafka/data
-      - kafka-data:/opt/kafka/data
+      - kafka-data:/var/lib/kafka/data
+      # - kafka-data:/opt/kafka/data
       - kafka-docker-sock:/var/run/docker.sock
     healthcheck:
       test: kafka-topics --bootstrap-server kafka:9092 --list

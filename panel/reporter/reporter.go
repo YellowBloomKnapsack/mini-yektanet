@@ -37,6 +37,7 @@ type ReporterService struct {
 }
 
 func newConsumerService(kafkaBootstrapServers, topic string, buffLimit int, handler MessageHandlerFunc, timeout time.Duration) *ConsumerService {
+	fmt.Println("kafkaBootstrapServers:", kafkaBootstrapServers)
 	kafkaConsumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": kafkaBootstrapServers,
 		"auto.offset.reset": "earliest",

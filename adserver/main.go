@@ -20,7 +20,7 @@ func main() {
 	}
 
 	tokenHandler := tokenhandler.NewTokenHandlerService()
-	redisUrl := os.Getenv("REDIS_URL")
+	redisUrl := os.Getenv("REDIS_HOST")
 	cacheService := cache.NewAdServerCache(redisUrl)
 	logicService := logic.NewLogicService(cacheService)
 
