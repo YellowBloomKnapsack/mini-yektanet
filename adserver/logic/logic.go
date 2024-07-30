@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand/v2"
 	"net/http"
 	"os"
@@ -107,7 +108,7 @@ func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
 }
 
 func (ls *LogicService) updateAdsList() error {
-	fmt.Println("Fetching ads from panel API...")
+	log.Println("Fetching ads from panel API...")
 
 	resp, err := http.Get(ls.getAdsAPIPath)
 	if err != nil {
@@ -141,7 +142,7 @@ func (ls *LogicService) updateAdsList() error {
 
 	old_len := len(ls.unvisitedAds) + len(ls.visitedAds)
 	new_len := len(newUnvisitedAds) + len(newVisitedAds)
-	fmt.Printf("%d new ads were fetched.\n", new_len-old_len)
+	log.Printf("%d new ads were fetched.\n", new_len-old_len)
 
 	ls.visitedAds = newVisitedAds
 	ls.unvisitedAds = newUnvisitedAds
@@ -159,7 +160,7 @@ func (ls *LogicService) StartTicker() {
 			case <-ticker.C:
 				err := ls.updateAdsList()
 				if err != nil {
-					fmt.Println(err)
+					log.Println("Failed to update ads:", err)
 				}
 			}
 		}

@@ -20,7 +20,6 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	fmt.Println("Listening on port ")
 	database.InitDB()
 
 	clickTopic := os.Getenv("KAFKA_TOPIC_CLICK")
