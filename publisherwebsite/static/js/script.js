@@ -17,6 +17,7 @@ const publisherName = arr[arr.length-1]
 // const AdServerAPILink = "http://localhost:8081"
 const AdServerAPILink = "http://"+arr[arr.length-2].replace("8084","8081")
 let publisherId = 1;
+// hardcoded for the purposes of testing. the actual scriptTemplate.js does not work like this
 switch (publisherName) {
     case "varzesh3": publisherId = 1; break;
     case "digikala": publisherId = 2; break;
@@ -33,35 +34,43 @@ fetch(AdServerAPILink+"/"+publisherId)
     return res.json()
 }).then((data) => {
     console.log(data)
-    const div = document.createElement("div")
+    const adDiv = document.createElement("div")
     const img = document.createElement("img")
     img.src = data["image_link"]
     const title = document.createTextNode(data["title"])
-    div.appendChild(img)
-    div.appendChild(title)
-    div.onclick = ()=>clickHandler(data)
-    div.style="cursor:pointer;border:solid black 20px;"
-    document.getElementsByTagName("body")[0].appendChild(div)
+    adDiv.appendChild(img)
+    adDiv.appendChild(title)
+    adDiv.onclick = ()=>clickHandler(data)
+    adDiv.style="cursor:pointer;border:solid black 20px;"
+    document.getElementsByTagName("body")[0].appendChild(adDiv)
+
+    // handling when an element is in view
     let viewed = false
+    let options = {
+        root: null, // i.e. viewport
+        rootMargin: "0px",
+        threshold: 0.05,
+    }
 
-    const impressionHandler = onVisibilityChange(div, function() {
-        console.log("here")
-        if(!viewed) {
-            console.log("bro")
-            viewed = true
-            fetch(data["impression_link"], {
-                method: "POST",
-                body: JSON.stringify({
-                    token: data["impression_token"]
+    const impressionHandler = (entries, observer) => {
+        console.log(entries)
+        entries.forEach((entry) => {
+            console.log(entry)
+            if(entry.isIntersecting && !viewed) {
+                viewed = true
+                fetch(data["impression_link"], {
+                    method: "POST",
+                    body: JSON.stringify({
+                        token: data["impression_token"]
+                    })
                 })
-            })
-        }
-    });
+            }
+        })
+        
+    }
 
-    addEventListener('DOMContentLoaded', impressionHandler, false);
-    addEventListener('load', impressionHandler, false);
-    addEventListener('scroll', impressionHandler, false);
-    addEventListener('resize', impressionHandler, false);
+    let observer = new IntersectionObserver(impressionHandler, options)
+    observer.observe(adDiv)
 })
 
 function clickHandler(data) {
@@ -75,34 +84,4 @@ function clickHandler(data) {
         console.log(res)
         window.open(res.url)
     })
-    // .then((res) => {
-    //     if(!res.ok) {
-    //         throw new Error("could not get info from click.")
-    //     }
-    //     return res.json()
-    // })
-    // .then((data) => {
-    //     window.location.href = data.link
-    // })
-}
-
-const isElementInViewport = (el, partiallyVisible = true) => {
-    const { top, left, bottom, right } = el.getBoundingClientRect();
-    const { innerHeight, innerWidth } = window;
-    return partiallyVisible
-    ? ((top > 0 && top < innerHeight) ||
-        (bottom > 0 && bottom < innerHeight)) &&
-        ((left > 0 && left < innerWidth) || (right > 0 && right < innerWidth))
-    : top >= 0 && left >= 0 && bottom <= innerHeight && right <= innerWidth;
-};
-
-function onVisibilityChange(el, callback) {
-    var old_visible = false;
-    return function (e) {
-        var visible = isElementInViewport(el);
-        if (visible != old_visible) {
-            old_visible = visible;
-            callback()
-        }
-    }
 }
