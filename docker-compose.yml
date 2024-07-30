@@ -181,6 +181,8 @@ services:
       - REDIS_ADDR=redis:6379
     ports:
       - "9121:9121"
+    depends_on:
+      - redis
   kafka-exporter:
     image: danielqsj/kafka-exporter:v1.7.0
     command:
