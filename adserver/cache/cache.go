@@ -30,11 +30,7 @@ func NewAdServerCache(redisUrl string) cache.CacheInterface {
 	}
 }
 
-<<<<<<< HEAD
-func (r *AdServerCache) IsPresent(token string) bool {
-=======
 func (r *AdServerCache) IsPresent(key string) bool {
->>>>>>> f9183f8ac5da05f672f41230b8207db01b2fd834
 	ctx := context.Background()
 	present, err := r.redisClient.Exists(ctx, r.prefixStore+":"+key).Result()
 	if err != nil {
