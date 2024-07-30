@@ -15,7 +15,11 @@ import (
 
 func GetActiveAds(c *gin.Context) {
 	var ads []models.Ad
-	result := database.DB.Preload("Advertiser").Preload("AdsInteractions").Where("active = ?", true).Find(&ads)
+	result := database.DB.Preload("Advertiser").
+		Preload("AdsInteractions").
+		Joins("JOIN advertisers ON advertisers.id = ads.advertiser_id").
+		Where("ads.active = ? AND advertisers.balance > ?", true, 0).
+		Find(&ads)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch ads"})
 		return

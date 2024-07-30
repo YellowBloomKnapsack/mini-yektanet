@@ -2,7 +2,6 @@ package cache
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -15,6 +14,7 @@ import (
 type AdServerCache struct {
 	redisClient   *redis.Client
 	brakeDuration time.Duration
+	prefixStore   string
 }
 
 func NewAdServerCache(redisUrl string) cache.CacheInterface {
@@ -26,12 +26,17 @@ func NewAdServerCache(redisUrl string) cache.CacheInterface {
 			DB:       0,  // use default DB
 		}),
 		brakeDuration: time.Duration(brakeSeconds) * time.Second,
+		prefixStore:   os.Getenv("BRAKE_IDS_REDIS_PREFIX"),
 	}
 }
 
+<<<<<<< HEAD
 func (r *AdServerCache) IsPresent(token string) bool {
+=======
+func (r *AdServerCache) IsPresent(key string) bool {
+>>>>>>> f9183f8ac5da05f672f41230b8207db01b2fd834
 	ctx := context.Background()
-	present, err := r.redisClient.Exists(ctx, token).Result()
+	present, err := r.redisClient.Exists(ctx, r.prefixStore+":"+key).Result()
 	if err != nil {
 		log.Print(err)
 		return false
@@ -40,10 +45,10 @@ func (r *AdServerCache) IsPresent(token string) bool {
 	return bool(present == 1)
 }
 
-func (r *AdServerCache) Add(adID string) {
+func (r *AdServerCache) Add(key string) {
 	ctx := context.Background()
-	err := r.redisClient.Set(ctx, adID, "", r.brakeDuration).Err()
+	err := r.redisClient.Set(ctx, r.prefixStore+":"+key, "", r.brakeDuration).Err()
 	if err != nil {
-		log.Println("could not insert " + adID + " in Adserver redis: " + err.Error())
+		log.Println("could not insert " + key + " in adserver redis: " + err.Error())
 	}
 }
