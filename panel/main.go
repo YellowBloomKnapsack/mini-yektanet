@@ -16,11 +16,10 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(".env", "../common/.env", "../publisherwebsite/.env", "../adserver/.env"); err != nil {
+	if err := godotenv.Load(".env", "../common/.env", "../publisherwebsite/.env", "../adserver/.env", "../eventserver/.env"); err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	fmt.Println("Listening on port ")
 	database.InitDB()
 
 	clickTopic := os.Getenv("KAFKA_TOPIC_CLICK")

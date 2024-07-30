@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/base64"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -64,7 +63,6 @@ func (h *EventServerHandler) PostClick(c *gin.Context) {
 
 	// Running in goroutine so the server wouldn't have to wait
 	go h.produceClickIfTokenValid(token, data)
-	fmt.Println("slkdfjdfkdfjgkdfldf")
 
 	c.Redirect(http.StatusMovedPermanently, data.RedirectPath)
 }

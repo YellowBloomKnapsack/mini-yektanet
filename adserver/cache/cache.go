@@ -30,7 +30,6 @@ func NewAdServerCache(redisUrl string) cache.CacheInterface {
 }
 
 func (r *AdServerCache) IsPresent(token string) bool {
-	fmt.Println(token)
 	ctx := context.Background()
 	present, err := r.redisClient.Exists(ctx, token).Result()
 	if err != nil {

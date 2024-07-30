@@ -4,7 +4,6 @@ on:
   push:
     branches:
         - main
-        - feature/cicd
   pull_request:
     branches:
         - main
@@ -45,6 +44,7 @@ jobs:
 
           # Clone or pull the latest changes
           if [ -d .git ]; then
+            git restore .
             git pull
           else
             git clone https://github.com/YellowBloomKnapsack/mini-yektanet.git .

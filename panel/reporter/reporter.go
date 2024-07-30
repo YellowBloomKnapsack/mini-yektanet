@@ -71,7 +71,7 @@ func (c *ConsumerService) Start() {
 		case <-timer.C:
 			// If the timer expires, process the messages in the buffer
 			if len(buffer) > 0 {
-				fmt.Println("Timer expired, processing messages")
+				log.Println("Timer expired, processing messages")
 				if err := c.handler(buffer); err != nil {
 					log.Printf("Error handling messages: %v", err)
 				}
@@ -250,7 +250,7 @@ func handleClick(messages []kafka.Message) error {
 }
 
 func handleImpression(messages []kafka.Message) error {
-	fmt.Println("Handling impression event")
+	log.Println("Handling impression event")
 	interactionsToInsert := make([]models.AdsInteraction, 0)
 	for _, msg := range messages {
 		var event dto.ImpressionEvent
