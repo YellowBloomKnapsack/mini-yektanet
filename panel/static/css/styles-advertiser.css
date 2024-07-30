@@ -89,3 +89,38 @@ button:hover {
 .transactions-table td {
     vertical-align: middle;
 }
+
+.pagination {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.pagination ul {
+    list-style-type: none;
+    padding: 0;
+    display: inline-block;
+}
+
+.pagination li {
+    display: inline;
+    margin-right: 5px;
+}
+
+.pagination li a {
+    text-decoration: none;
+    padding: 8px 12px;
+    background-color: #f4f4f4;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.pagination li.active a {
+    background-color: #333;
+    color: #fff;
+    border-color: #333;
+}
+
+.pagination li a:hover {
+    background-color: #ddd;
+}

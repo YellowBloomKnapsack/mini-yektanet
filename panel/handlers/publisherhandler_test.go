@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -22,7 +23,21 @@ import (
 func testPublisherPanel(t *testing.T) {
 	os.Setenv("YEKTANET_PORTION", "20")
 	r := gin.Default()
+	r.SetFuncMap(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"until": func(count int) []int {
+			var i int
+			var items []int
+			for i = 0; i < count; i++ {
+				items = append(items, i)
+			}
+			return items
+		},
+	})
 	r.LoadHTMLGlob("../templates/*")
+
 	r.GET("/publisher/:username/panel", PublisherPanel)
 
 	// Test Case 1: Existing Publisher
