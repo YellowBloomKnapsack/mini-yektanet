@@ -79,8 +79,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.redis
-    ports:
-      - "6379:6379"
+#    ports:
+#      - "6379"
     volumes:
       - redis-data:/data
     # command: redis-server --appendonly yes --loadmodule /opt/redis-stack/lib/redisbloom.so
@@ -116,9 +116,9 @@ services:
     depends_on:
       zookeeper:
         condition: service_healthy
-    ports:
-      - 29092:29092
-      - 9092:9092
+#    ports:
+#      - 29092:29092
+#      - 9092:9092
     restart: unless-stopped
     environment:
       KAFKA_BROKER_ID: 1
