@@ -213,7 +213,9 @@ func handleClick(messages []kafka.Message) error {
 		}
 
 		sum, _ := logic.GetSumOfBids(database.DB, ad.ID)
+		log.Printf("Ad with id %d has %d cost over the last minute.\n", ad.ID, sum)
 		if sum > ad.Advertiser.Balance {
+			log.Println("Braking it")
 			go handlers.NotifyAdsBrake(ad.ID)
 		}
 

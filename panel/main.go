@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 
+	"YellowBloomKnapsack/mini-yektanet/common/grafana"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/panel/handlers"
 	"YellowBloomKnapsack/mini-yektanet/panel/reporter"
@@ -12,6 +13,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -33,6 +35,9 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins: true,
 	}))
+	r.Use(grafana.PrometheusMiddleware())
+
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	r.LoadHTMLGlob("templates/*")
 	r.Static("/static", "./static")
 
