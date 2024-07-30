@@ -5,6 +5,7 @@ import (
 	"os"
 	"log"
 	"time"
+	"fmt"
 
 	"YellowBloomKnapsack/mini-yektanet/common/cache"
 	"github.com/redis/go-redis/v9"
@@ -77,5 +78,7 @@ func bfResetService(r *EventServerCache) {
 }
 
 func bfTableName() string {
-	return "bf_token_"//+time.Now().Format("2006.01.02")
+	str := "bf_token_"+time.Now().Format("2006.01.02")
+	fmt.Println(str)
+	return str
 }
