@@ -22,21 +22,24 @@ type LogicInterface interface {
 }
 
 type LogicService struct {
-	visitedAds     []*dto.AdDTO
-	unvisitedAds   []*dto.AdDTO
-	brakedAdsCache cache.CacheInterface
-	getAdsAPIPath  string
-	interval       int
+	visitedAds                []*dto.AdDTO
+	unvisitedAds              []*dto.AdDTO
+	brakedAdsCache            cache.CacheInterface
+	getAdsAPIPath             string
+	interval                  int
+	firstChanceMaxImpressions int
 }
 
 func NewLogicService(cache cache.CacheInterface) LogicInterface {
 	interval, _ := strconv.Atoi(os.Getenv("ADS_FETCH_INTERVAL_SECS"))
+	firstChanceMaxImpressions, _ := strconv.Atoi(os.Getenv("FIRST_CHANCE_MAX_IMPRESSIONS"))
 	return &LogicService{
-		visitedAds:     make([]*dto.AdDTO, 0),
-		unvisitedAds:   make([]*dto.AdDTO, 0),
-		brakedAdsCache: cache,
-		getAdsAPIPath:  "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API"),
-		interval:       interval,
+		visitedAds:                make([]*dto.AdDTO, 0),
+		unvisitedAds:              make([]*dto.AdDTO, 0),
+		brakedAdsCache:            cache,
+		getAdsAPIPath:             "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API"),
+		interval:                  interval,
+		firstChanceMaxImpressions: firstChanceMaxImpressions,
 	}
 }
 
@@ -87,22 +90,27 @@ func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
 	validUnvisitedsAds := ls.validsOn(ls.unvisitedAds)
 
 	if len(validUnvisitedsAds) == 0 && len(validVisitedsAds) == 0 {
+		log.Println("No ad was found")
 		return nil, fmt.Errorf("no ad was found")
 	}
 
 	if len(validUnvisitedsAds) == 0 {
+		log.Println("Cannot find any first-chance ads, doing auction")
 		return ls.bestScoreOn(validVisitedsAds), nil
 	}
 
 	if len(validVisitedsAds) == 0 {
+		log.Println("Cannot find any visited ads, choosing a random first-chance ad")
 		return ls.randomOn(validUnvisitedsAds), nil
 	}
 
 	randomNumber := rand.Float32()
 	unvisitedChance, _ := strconv.Atoi(os.Getenv("UNVISITED_CHANCE"))
 	if randomNumber < float32(unvisitedChance)/100.0 {
+		log.Println("Showing a random first-chance ad")
 		return ls.randomOn(validUnvisitedsAds), nil
 	} else {
+		log.Println("Doing auction")
 		return ls.bestScoreOn(validVisitedsAds), nil
 	}
 }
@@ -133,7 +141,7 @@ func (ls *LogicService) updateAdsList() error {
 	var newVisitedAds []*dto.AdDTO
 	var newUnvisitedAds []*dto.AdDTO
 	for _, ad := range ads {
-		if ad.Impressions == 0 {
+		if ad.Impressions <= ls.firstChanceMaxImpressions {
 			newUnvisitedAds = append(newUnvisitedAds, &ad)
 		} else {
 			newVisitedAds = append(newVisitedAds, &ad)
@@ -151,6 +159,8 @@ func (ls *LogicService) updateAdsList() error {
 }
 
 func (ls *LogicService) StartTicker() {
+	log.Println("Starting ticker...")
+	ls.updateAdsList()
 	go func() {
 		ticker := time.NewTicker(time.Duration(ls.interval) * time.Second)
 		defer ticker.Stop()
@@ -168,5 +178,6 @@ func (ls *LogicService) StartTicker() {
 }
 
 func (ls *LogicService) BrakeAd(adId uint) {
+	log.Printf("Braking ad with id %d\n", adId)
 	ls.brakedAdsCache.Add(strconv.FormatUint(uint64(adId), 10))
 }
