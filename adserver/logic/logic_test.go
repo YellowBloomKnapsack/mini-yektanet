@@ -1,13 +1,13 @@
 package logic
 
 import (
-	"strconv"
-	"os"
-	"testing"
-	"time"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strconv"
+	"testing"
+	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 
@@ -19,17 +19,17 @@ type MockCacheService struct {
 	mark map[string]interface{}
 }
 
-func (m *MockCacheService) IsPresent(token string) bool {
-	_, ok := m.mark[token]
+func (m *MockCacheService) IsPresent(key string) bool {
+	_, ok := m.mark[key]
 	return ok
 }
 
-func (m *MockCacheService) Add(token string) {
-	m.mark[token] = ""
+func (m *MockCacheService) Add(key string) {
+	m.mark[key] = ""
 	go func() {
 		brakeSeconds, _ := strconv.Atoi(os.Getenv("BRAKE_DURATION_SECS"))
 		time.Sleep(time.Duration(brakeSeconds))
-		delete(m.mark, token)
+		delete(m.mark, key)
 	}()
 }
 
