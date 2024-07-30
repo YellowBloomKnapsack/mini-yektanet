@@ -1,7 +1,6 @@
 package main
 
 import (
-	"time"
 	"log"
 	"os"
 
@@ -24,8 +23,7 @@ func main() {
 	redisUrl := os.Getenv("REDIS_HOST")
 	redisUrl = redisUrl + ":6379"
 
-	cacheService := cache.NewEventServerCache(redisUrl, time.Duration(60)*time.Second) // periodic reset
-	// cacheService := cache.NewEventServerCache(redisUrl, time.Duration(0)) // daily reset
+	cacheService := cache.NewEventServerCache(redisUrl)
 	producerService := producer.NewKafkaProducer()
 
 	handler := handlers.NewEventServerHandler(tokenHandler, cacheService, producerService)
