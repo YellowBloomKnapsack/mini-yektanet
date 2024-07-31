@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
@@ -17,6 +18,7 @@ func GetActiveAds(c *gin.Context) {
 	var ads []models.Ad
 	result := database.DB.Preload("Advertiser").
 		Preload("AdsInteractions").
+		Preload("Keywords").
 		Joins("JOIN advertisers ON advertisers.id = ads.advertiser_id").
 		Where("ads.active = ? AND advertisers.balance > ?", true, 0).
 		Find(&ads)
@@ -28,6 +30,18 @@ func GetActiveAds(c *gin.Context) {
 	var adDTOs []dto.AdDTO
 	for _, ad := range ads {
 		impressionsCount := getImpressionCounts(ad.AdsInteractions)
+
+		var keywordStrings []string
+		for _, keyword := range ad.Keywords {
+			cleanKeyword := strings.TrimSpace(keyword.Keywords)
+			if cleanKeyword != "" {
+				keywordStrings = append(keywordStrings, cleanKeyword)
+			}
+		}
+
+		// Join keywords into a comma-separated string
+		keywordString := strings.Join(keywordStrings, ", ")
+
 		adDTO := dto.AdDTO{
 			ID:                ad.ID,
 			Text:              ad.Text,
@@ -38,6 +52,7 @@ func GetActiveAds(c *gin.Context) {
 			BalanceAdvertiser: ad.Advertiser.Balance,
 			Impressions:       impressionsCount,
 			Score:             logic.GetScore(ad, impressionsCount),
+			Keywords:          keywordString,
 		}
 		adDTOs = append(adDTOs, adDTO)
 	}

@@ -10,4 +10,5 @@ type AdDTO struct {
 	Impressions       int
 	BalanceAdvertiser int64
 	Score             float64
+	Keywords          string
 }
