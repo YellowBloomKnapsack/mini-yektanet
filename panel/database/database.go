@@ -56,6 +56,7 @@ func InitDB() {
 	DB.AutoMigrate(&models.AdsInteraction{})
 	DB.AutoMigrate(&models.Advertiser{})
 	DB.AutoMigrate(&models.Transaction{})
+	DB.AutoMigrate(&models.Keyword{})
 	err = initPublishers()
 	if err != nil {
 		log.Fatal(err)
@@ -90,6 +91,7 @@ func InitTestDB() {
 	DB.AutoMigrate(&models.AdsInteraction{})
 	DB.AutoMigrate(&models.Advertiser{})
 	DB.AutoMigrate(&models.Transaction{})
+	DB.AutoMigrate(&models.Keyword{})
 	if err != nil {
 		log.Fatal(err)
 	}

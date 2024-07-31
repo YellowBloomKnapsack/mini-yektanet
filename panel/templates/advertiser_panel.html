@@ -9,74 +9,42 @@
 </head>
 
 <body>
-    <div class="container">
-        <h1>Advertiser Panel</h1>
-        <div class="balance">
-            <h2>Account Balance: ${{ .Balance }}</h2>
-            <form action="/advertiser/{{ .Username }}/add-funds" method="POST">
-                <input type="number" name="amount" placeholder="Amount">
-                <button type="submit">Add Funds</button>
-            </form>
-        </div>
-        <div class="create-ad">
-            <h2>Create New Ad</h2>
-            <form action="/advertiser/{{ .Username }}/create-ad" method="POST" enctype="multipart/form-data">
-                <input type="text" name="title" placeholder="Ad Title" required>
-                <input type="url" name="website" placeholder="Ad Website" required>
-                <input type="file" name="image" accept="image/*" required>
-                <input type="number" name="bid" placeholder="Bid per Click" required>
-                <button type="submit">Create Ad</button>
-            </form>
-        </div>
-        <div class="transactions-container">
-            <h3>Transactions</h3>
-            <table class="transactions-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Description</th>
-                        <th>Amount</th>
-                        <th>Successful</th>
-                        <th>Income</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{ range .Transactions }}
-                    <tr>
-                        <td>{{ .ID }}</td>
-                        <td>{{ .Description }}</td>
-                        <td>{{ .Amount }}</td>
-                        <td>{{ if .Successful }}Yes{{ else }}No{{ end }}</td>
-                        <td>{{ if .Income }}Yes{{ else }}No{{ end }}</td>
-                        <td>{{ .Time.Format "2006-01-02 15:04:05" }}</td>
-                    </tr>
-                    {{ end }}
-                </tbody>
-            </table>
+<div class="container">
+    <h1>Advertiser Panel</h1>
+    <div class="balance">
+        <h2>Account Balance: ${{ .Balance }}</h2>
+        <form action="/advertiser/{{ .Username }}/add-funds" method="POST">
+            <input type="number" name="amount" placeholder="Amount">
+            <button type="submit">Add Funds</button>
+        </form>
+    </div>
+    <div class="create-ad">
+        <h2>Create New Ad</h2>
+        <form action="/advertiser/{{ .Username }}/create-ad" method="POST" enctype="multipart/form-data">
+            <input type="text" name="title" placeholder="Ad Title" required>
+            <input type="url" name="website" placeholder="Ad Website" required>
+            <input type="file" name="image" accept="image/*" required>
+            <input type="number" name="bid" placeholder="Bid per Click" required>
 
-            <div class="pagination">
-                {{ if gt .TotalPages 1 }}
-                    <ul>
-                        {{ range $i := until .TotalPages }}
-                            <li class="{{ if eq (add $i 2) $.CurrentPage }}active{{ end }}">
-                                <a href="?page={{ add $i 1 }}">{{ add $i 1 }}</a>
-                            </li>
-                        {{ end }}
-                    </ul>
-                {{ end }}
-            </div>
-        </div>
+            <input type="text" name="keyword1" placeholder="Keyword 1">
+            <input type="text" name="keyword2" placeholder="Keyword 2">
+            <input type="text" name="keyword3" placeholder="Keyword 3">
+            <input type="text" name="keyword4" placeholder="Keyword 4">
 
-        <div class="ad-list">
-            <h2>Your Ads</h2>
-            {{ range .Ads }}
+            <button type="submit">Create Ad</button>
+        </form>
+    </div>
+
+    <div class="ad-list">
+        <h2>Your Ads</h2>
+        {{ range .Ads }}
             <div class="ad-item">
                 <h3>{{ .Text }}</h3>
                 <img src="{{ .ImagePath }}" alt="Ad Image">
                 <p>Bid: ${{ .Bid }}</p>
                 <p>Website: {{ .Website }}</p>
                 <p>Status: {{ if .Active }}Active{{ else }}Inactive{{ end }}</p>
+                <p>Keywords: {{ .Keywords.Keywords }}</p>
                 <form action="/advertiser/{{ $.Username }}/toggle-ad" method="POST">
                     <input type="hidden" name="ad_id" value="{{ .ID }}">
                     <button type="submit">{{ if .Active }}Deactivate{{ else }}Activate{{ end }}</button>
@@ -96,16 +64,54 @@
                     </form>
                 </div>
             </div>
+        {{ end }}
+    </div>
+    <div class="transactions-container">
+        <h3>Transactions</h3>
+        <table class="transactions-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Successful</th>
+                <th>Income</th>
+                <th>Time</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{ range .Transactions }}
+            <tr>
+                <td>{{ .ID }}</td>
+                <td>{{ .Description }}</td>
+                <td>{{ .Amount }}</td>
+                <td>{{ if .Successful }}Yes{{ else }}No{{ end }}</td>
+                <td>{{ if .Income }}Yes{{ else }}No{{ end }}</td>
+                <td>{{ .Time.Format "2006-01-02 15:04:05" }}</td>
+            </tr>
+            {{ end }}
+            </tbody>
+        </table>
+        
+        <div class="pagination">
+            {{ if gt .TotalPages 1 }}
+            <ul>
+                {{ range $i := until .TotalPages }}
+                <li class="{{ if eq (add $i 2) $.CurrentPage }}active{{ end }}">
+                    <a href="?page={{ add $i 1 }}">{{ add $i 1 }}</a>
+                </li>
+                {{ end }}
+            </ul>
             {{ end }}
         </div>
-
     </div>
-    <script>
-        function showEditForm(adId) {
-            var form = document.getElementById('editForm' + adId);
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
-        }
-    </script>
+</div>
+<script>
+    function showEditForm(adId) {
+        var form = document.getElementById('editForm' + adId);
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+</script>
 </body>
 
 </html>

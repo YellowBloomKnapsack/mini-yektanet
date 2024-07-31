@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/models"
@@ -22,14 +23,14 @@ const (
 	INTBASE      = 10
 	INTBIT32     = 32
 	INTBIT64     = 64
-	itemsPerPage = 4
+	itemsPerPage = 47
 )
 
 func AdvertiserPanel(c *gin.Context) {
 	advertiserUserName := c.Param("username")
 
 	var advertiser models.Advertiser
-	result := database.DB.Preload("Ads").Where("username = ?", advertiserUserName).First(&advertiser)
+	result := database.DB.Preload("Ads").Preload("Ads.Keywords").Where("username = ?", advertiserUserName).First(&advertiser)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			fmt.Printf("No advertiser found with username %s, creating a new one.\n", advertiserUserName)
@@ -149,13 +150,14 @@ func AddFunds(c *gin.Context) {
 }
 
 func CreateAd(c *gin.Context) {
-	// TODO: Get advertiser ID from session
 	advertiserUserName := c.Param("username")
 	var advertiser models.Advertiser
 	result := database.DB.Where("username = ?", advertiserUserName).First(&advertiser)
 	if result.Error != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
+
 	title := c.PostForm("title")
 	website := c.PostForm("website")
 	bid, _ := strconv.ParseInt(c.PostForm("bid"), INTBASE, INTBIT64)
@@ -164,23 +166,16 @@ func CreateAd(c *gin.Context) {
 		return
 	}
 
-	// Handle file upload
 	file, _ := c.FormFile("image")
-
-	// Create a unique filename
 	filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), file.Filename)
-
-	// Define the path where the image will be saved
 	uploadDir := "static/uploads/"
 	filepath := path.Join(uploadDir, filename)
 
-	// Ensure the upload directory exists
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
 		return
 	}
 
-	// Save the file
 	if err := c.SaveUploadedFile(file, filepath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
 		return
@@ -188,13 +183,29 @@ func CreateAd(c *gin.Context) {
 
 	ad := models.Ad{
 		Text:         title,
-		ImagePath:    "/" + filepath, // Store the path relative to the server root
+		ImagePath:    "/" + filepath,
 		Bid:          bid,
 		AdvertiserID: advertiser.ID,
 		Website:      website,
 	}
 
 	database.DB.Create(&ad)
+
+	// Extract and save keywords
+	keywords := []string{
+		c.PostForm("keyword1"),
+		c.PostForm("keyword2"),
+		c.PostForm("keyword3"),
+		c.PostForm("keyword4"),
+	}
+
+	keywordString := strings.Join(keywords, ",")
+
+	keywordRecord := models.Keyword{
+		AdID:     ad.ID,
+		Keywords: keywordString,
+	}
+	database.DB.Create(&keywordRecord)
 
 	c.Redirect(http.StatusSeeOther, fmt.Sprintf("/advertiser/%s/panel", advertiserUserName))
 
@@ -238,7 +249,7 @@ func AdReport(c *gin.Context) {
 	adID, _ := strconv.ParseUint(c.Param("id"), INTBASE, INTBIT32)
 
 	var ad models.Ad
-	database.DB.Preload("AdsInteractions").Preload("Advertiser").First(&ad, adID)
+	database.DB.Preload("AdsInteractions").Preload("Keywords").Preload("Advertiser").First(&ad, adID)
 
 	impressions := 0
 	clicks := 0
@@ -262,8 +273,10 @@ func AdReport(c *gin.Context) {
 		"CTR":         ctr,
 		"TotalCost":   ad.TotalCost,
 		"Website":     ad.Website,
+		"Keywords":    ad.Keywords,
 	})
 }
+
 func HandleEditAd(c *gin.Context) {
 	username := c.Param("username")
 	adID, err := strconv.Atoi(c.PostForm("ad_id"))
@@ -329,6 +342,7 @@ func HandleEditAd(c *gin.Context) {
 
 	c.Redirect(http.StatusSeeOther, "/advertiser/"+username+"/panel")
 }
+
 func removeFileIfExists(filePath string) error {
 	// Check if the file exists
 	_, err := os.Stat(filePath)

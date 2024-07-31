@@ -13,4 +13,5 @@ type Ad struct {
 	AdvertiserID    uint
 	Advertiser      Advertiser
 	AdsInteractions []AdsInteraction
+	Keywords        Keyword
 }

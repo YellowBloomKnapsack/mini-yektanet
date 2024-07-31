@@ -22,6 +22,7 @@
                 <p class="ad-stat">Clicks: {{ .Clicks }}</p>
                 <p class="ad-stat">CTR: {{ printf "%.2f%%" .CTR }}</p>
                 <p class="ad-stat">Total Cost: {{ .TotalCost }}</p>
+                <p class="ad-stat">Keywords: {{ .Keywords.Keywords }}</p>
                 <p>Website: <a href="{{.Website}}" target="_blank">{{.Website}}</a></p>
                 <a href="/advertiser/{{ .Ad.Advertiser.Username }}/panel" class="back-button">Back to Panel</a>
             </div>

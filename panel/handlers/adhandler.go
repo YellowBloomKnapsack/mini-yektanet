@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"net/http"
-	"os"
-	"strconv"
-
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/panel/logic"
+	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +16,7 @@ func GetActiveAds(c *gin.Context) {
 	var ads []models.Ad
 	result := database.DB.Preload("Advertiser").
 		Preload("AdsInteractions").
+		Preload("Keywords").
 		Joins("JOIN advertisers ON advertisers.id = ads.advertiser_id").
 		Where("ads.active = ? AND advertisers.balance > ?", true, 0).
 		Find(&ads)
@@ -28,6 +28,7 @@ func GetActiveAds(c *gin.Context) {
 	var adDTOs []dto.AdDTO
 	for _, ad := range ads {
 		impressionsCount := getImpressionCounts(ad.AdsInteractions)
+
 		adDTO := dto.AdDTO{
 			ID:                ad.ID,
 			Text:              ad.Text,
@@ -38,6 +39,7 @@ func GetActiveAds(c *gin.Context) {
 			BalanceAdvertiser: ad.Advertiser.Balance,
 			Impressions:       impressionsCount,
 			Score:             logic.GetScore(ad, impressionsCount),
+			Keywords:          logic.SplitAndClean(ad.Keywords.Keywords),
 		}
 		adDTOs = append(adDTOs, adDTO)
 	}

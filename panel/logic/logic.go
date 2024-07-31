@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/models"
@@ -37,4 +38,25 @@ func GetSumOfBids(db *gorm.DB, adID uint) (int64, error) {
 	} else {
 		return 0, err
 	}
+}
+
+func SplitAndClean(input string) []string {
+	// Split the input string by commas
+	parts := strings.Split(input, ",")
+
+	// Create a slice to hold the cleaned parts
+	var result []string
+
+	// Loop through the parts
+	for _, part := range parts {
+		// Trim any leading or trailing whitespace
+		trimmed := strings.TrimSpace(part)
+
+		// Add the non-empty trimmed part to the result
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+
+	return result
 }
