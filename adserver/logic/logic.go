@@ -208,7 +208,7 @@ func (ls *LogicService) updateAdsList() error {
 }
 
 func (ls *LogicService) StartTicker() {
-	log.Println("Starting ticker...")
+	log.Println("Starting ads fetcher ticker...")
 	ls.updateAdsList()
 	go func() {
 		ticker := time.NewTicker(time.Duration(ls.interval) * time.Second)
