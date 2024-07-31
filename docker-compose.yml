@@ -175,8 +175,7 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
-      prometheus:
-        condition: service_healthy
+      - prometheus
   redis-exporter:
     image: oliver006/redis_exporter:v1.62.0
     environment:
@@ -223,5 +222,5 @@ volumes:
   zookeeper-logs:
   kafka-data:
   kafka-docker-sock:
-  grafana-data:
   prometheus-data:
+  grafana-data:
