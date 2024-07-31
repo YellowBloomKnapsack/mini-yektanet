@@ -146,6 +146,6 @@ func InitializeMetrics() {
         if err := database.DB.Model(&models.Transaction{}).Where("successful = ?", false).Count(&failedTransactions).Error; err != nil {
                 log.Printf("Error counting failed transactions: %v", err)
         }
-        TransactionCount.WithLabelValues("success").Add(float64(successTransactions))
-        TransactionCount.WithLabelValues("failure").Add(float64(failedTransactions))
+        TransactionCount.WithLabelValues("click_success").Add(float64(successTransactions))
+        TransactionCount.WithLabelValues("click_failure").Add(float64(failedTransactions))
 }

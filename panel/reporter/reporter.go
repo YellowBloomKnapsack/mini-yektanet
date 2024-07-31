@@ -259,7 +259,9 @@ func handleClick(messages []kafka.Message) error {
 			return fmt.Errorf("Failed to commit transaction: %w", err)
 		}
 
-		grafana.TotalRevenue.Add(float64(ad.Bid*int64(yektanetPortion)))
+		grafana.TotalRevenue.Add(float64(ad.Bid*int64(yektanetPortion))/100)
+		grafana.TotalPublisherBalance.Add(float64(publisherPortion))
+		grafana.TotalAdvertiserBalance.Add(-float64(transaction_advertiser.Amount))
 		grafana.ClickCount.Inc()
 		grafana.TransactionCount.WithLabelValues("click_success").Inc()
 	}

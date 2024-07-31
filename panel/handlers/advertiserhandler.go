@@ -185,7 +185,7 @@ func CreateAd(c *gin.Context) {
 	grafana.NumberOfBids.Write(nBidsMetric)
 	grafana.AverageBid.Write(bidsAvgMetric)
 
-	nBids := nBidsMetric.GetGauge().GetValue()
+	nBids := nBidsMetric.GetCounter().GetValue()
 	bidsAvg := bidsAvgMetric.GetGauge().GetValue()
 
 	// update grafana metric values
