@@ -1,6 +1,10 @@
 package grafana
 
 import (
+        "log"
+
+        "YellowBloomKnapsack/mini-yektanet/common/models"
+        "YellowBloomKnapsack/mini-yektanet/panel/database"
         "github.com/prometheus/client_golang/prometheus"
         "github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -63,16 +67,85 @@ var (
 )
 
 func InitializeMetrics() {
-        // ActiveAdsCount.Set(0)
-        // AdvertisersCount.Set(0)
-        // PublishersCount.Set(0)
-        // ImpressionCount.Set(0)
-        // ClickCount.Set(0)
-        // TotalRevenue.Set(0)
-        // NumberOfBids.Set(0)
-        // AverageBid.Set(0)
-        // //TransactionCount // different setting needed for this
-        // TotalAdvertiserBalance.Set(0)
-        // TotalPublisherBalance.Set(0)
-        return 
+// Initialize ActiveAdsCount
+        var activeAdsCount int64
+        if err := database.DB.Model(&models.Ad{}).Where("active = ?", true).Count(&activeAdsCount).Error; err != nil {
+                log.Printf("Error counting active ads: %v", err)
+        }
+        ActiveAdsCount.Set(float64(activeAdsCount))
+
+        // Initialize AdvertisersCount
+        var advertisersCount int64
+        if err := database.DB.Model(&models.Advertiser{}).Count(&advertisersCount).Error; err != nil {
+                log.Printf("Error counting advertisers: %v", err)
+        }
+        AdvertisersCount.Add(float64(advertisersCount)) // Counter metrics use Add instead of Set
+
+        // Initialize PublishersCount
+        var publishersCount int64
+        if err := database.DB.Model(&models.Publisher{}).Count(&publishersCount).Error; err != nil {
+                log.Printf("Error counting publishers: %v", err)
+        }
+        PublishersCount.Add(float64(publishersCount)) // Counter metrics use Add instead of Set
+
+        // Initialize ImpressionCount
+        var impressionCount int64
+        if err := database.DB.Model(&models.AdsInteraction{}).Where("type = ?", int(models.Impression)).Count(&impressionCount).Error; err != nil {
+                log.Printf("Error counting impressions: %v", err)
+        }
+        ImpressionCount.Add(float64(impressionCount))
+
+        // Initialize ClickCount
+        var clickCount int64
+        if err := database.DB.Model(&models.AdsInteraction{}).Where("type = ?", int(models.Click)).Count(&clickCount).Error; err != nil {
+                log.Printf("Error counting clicks: %v", err)
+        }
+        ClickCount.Add(float64(clickCount))
+
+        // Initialize TotalRevenue
+        var totalRevenue int64
+        if err := database.DB.Model(&models.Transaction{}).Select("SUM(amount)").Where("income = ?", true).Scan(&totalRevenue).Error; err != nil {
+                log.Printf("Error calculating total revenue: %v", err)
+        }
+        TotalRevenue.Add(float64(totalRevenue))
+
+        // Initialize NumberOfBids and AverageBid
+        var totalBids int64
+        var sumBids int64
+        if err := database.DB.Model(&models.Ad{}).Count(&totalBids).Error; err != nil {
+                log.Printf("Error counting bids: %v", err)
+        }
+        if err := database.DB.Model(&models.Ad{}).Select("SUM(bid)").Scan(&sumBids).Error; err != nil {
+                log.Printf("Error summing bids: %v", err)
+        }
+        NumberOfBids.Add(float64(totalBids))
+        if totalBids > 0 {
+                AverageBid.Set(float64(sumBids) / float64(totalBids))
+        }
+
+        // Initialize TotalAdvertiserBalance
+        var totalAdvertiserBalance int64
+        if err := database.DB.Model(&models.Advertiser{}).Select("SUM(balance)").Scan(&totalAdvertiserBalance).Error; err != nil {
+                log.Printf("Error calculating total advertiser balance: %v", err)
+        }
+        TotalAdvertiserBalance.Set(float64(totalAdvertiserBalance))
+
+        // Initialize TotalPublisherBalance
+        var totalPublisherBalance int64
+        if err := database.DB.Model(&models.Publisher{}).Select("SUM(balance)").Scan(&totalPublisherBalance).Error; err != nil {
+                log.Printf("Error calculating total publisher balance: %v", err)
+        }
+        TotalPublisherBalance.Set(float64(totalPublisherBalance))
+
+        // Initialize TransactionCount
+        var successTransactions int64
+        var failedTransactions int64
+        if err := database.DB.Model(&models.Transaction{}).Where("successful = ?", true).Count(&successTransactions).Error; err != nil {
+                log.Printf("Error counting successful transactions: %v", err)
+        }
+        if err := database.DB.Model(&models.Transaction{}).Where("successful = ?", false).Count(&failedTransactions).Error; err != nil {
+                log.Printf("Error counting failed transactions: %v", err)
+        }
+        TransactionCount.WithLabelValues("success").Add(float64(successTransactions))
+        TransactionCount.WithLabelValues("failure").Add(float64(failedTransactions))
 }
