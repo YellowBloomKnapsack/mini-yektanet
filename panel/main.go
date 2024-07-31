@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"YellowBloomKnapsack/mini-yektanet/common/grafana"
+	panelGrafana "YellowBloomKnapsack/mini-yektanet/panel/grafana"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/panel/handlers"
 	"YellowBloomKnapsack/mini-yektanet/panel/reporter"
@@ -63,5 +64,7 @@ func main() {
 	if port == "" {
 		port = "8083"
 	}
+	panelGrafana.InitializeMetrics()
+
 	r.Run(os.Getenv("GIN_HOSTNAME") + ":" + port)
 }

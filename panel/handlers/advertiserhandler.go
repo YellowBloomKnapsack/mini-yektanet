@@ -10,6 +10,9 @@ import (
 
 	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
+	"YellowBloomKnapsack/mini-yektanet/panel/grafana"
+	// "github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -39,6 +42,7 @@ func AdvertiserPanel(c *gin.Context) {
 				c.AbortWithStatus(http.StatusInternalServerError)
 			}
 			fmt.Println("New advertiser created:", newAdvertiser)
+			grafana.AdvertisersCount.Inc()
 
 		} else {
 			fmt.Println("Error:", result.Error)
@@ -52,6 +56,8 @@ func AdvertiserPanel(c *gin.Context) {
 		"Username":     advertiserUserName,
 		"Transactions": advertiser.Transactions,
 	})
+
+	grafana.TotalAdvertiserBalance.Set(float64(advertiser.Balance))
 }
 
 func AddFunds(c *gin.Context) {
@@ -110,9 +116,16 @@ func AddFunds(c *gin.Context) {
 		return
 	}
 
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		fmt.Printf("Failed to commit transaction: %w", err)
+		grafana.TransactionCount.WithLabelValues("add_funds_failure").Inc()
+		return
+	}
 
 	c.Redirect(http.StatusSeeOther, fmt.Sprintf("/advertiser/%s/panel", advertiserUserName))
+
+	grafana.TransactionCount.WithLabelValues("add_funds_success").Inc()
 }
 
 func CreateAd(c *gin.Context) {
@@ -164,6 +177,22 @@ func CreateAd(c *gin.Context) {
 	database.DB.Create(&ad)
 
 	c.Redirect(http.StatusSeeOther, fmt.Sprintf("/advertiser/%s/panel", advertiserUserName))
+
+	// average bid is calculated based on number of bids
+	// so we have to retrieve value of it first
+	nBidsMetric := &dto.Metric{}
+	bidsAvgMetric := &dto.Metric{}
+	grafana.NumberOfBids.Write(nBidsMetric)
+	grafana.AverageBid.Write(bidsAvgMetric)
+
+	nBids := nBidsMetric.GetGauge().GetValue()
+	bidsAvg := bidsAvgMetric.GetGauge().GetValue()
+
+	// update grafana metric values
+	grafana.NumberOfBids.Inc()
+	grafana.AverageBid.Set(bidsAvg+(float64(bid)-bidsAvg)/(nBids+1))
+
+	grafana.ActiveAdsCount.Inc()
 }
 
 func ToggleAd(c *gin.Context) {
@@ -177,6 +206,12 @@ func ToggleAd(c *gin.Context) {
 	database.DB.Save(&ad)
 
 	c.Redirect(http.StatusSeeOther, fmt.Sprintf("/advertiser/%s/panel", advertiserUserName))
+
+	if ad.Active {
+		grafana.ActiveAdsCount.Inc()
+	} else {
+		grafana.ActiveAdsCount.Dec()
+	}
 }
 
 func AdReport(c *gin.Context) {

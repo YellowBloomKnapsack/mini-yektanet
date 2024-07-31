@@ -3,7 +3,6 @@ package grafana
 import (
         "github.com/prometheus/client_golang/prometheus"
         "github.com/prometheus/client_golang/prometheus/promauto"
-        "YellowBloomKnapsack/mini-yektanet/common/grafana"
 )
 
 var (
@@ -22,17 +21,17 @@ var (
                 Help: "The total number of publishers",
         })
 
-        ImpressionCount = promauto.NewCounter(prometheus.CounterOpts{
+        ImpressionCount = promauto.NewGauge(prometheus.GaugeOpts{
                 Name: "impression_count",
                 Help: "The total number of impressions",
         })
 
-        ClickCount = promauto.NewCounter(prometheus.CounterOpts{
+        ClickCount = promauto.NewGauge(prometheus.GaugeOpts{
                 Name: "click_count",
                 Help: "The total number of clicks",
         })
 
-        TotalRevenue = promauto.NewCounter(prometheus.CounterOpts{
+        TotalRevenue = promauto.NewGauge(prometheus.GaugeOpts{
                 Name: "total_revenue",
                 Help: "The total revenue generated",
         })
@@ -72,7 +71,7 @@ func InitializeMetrics() {
         TotalRevenue.Set(0)
         NumberOfBids.Set(0)
         AverageBid.Set(0)
-        TransactionCount.Set(0)
+        //TransactionCount // different setting needed for this
         TotalAdvertiserBalance.Set(0)
         TotalPublisherBalance.Set(0)
 }

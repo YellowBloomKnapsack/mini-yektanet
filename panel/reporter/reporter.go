@@ -6,6 +6,8 @@ import (
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/panel/handlers"
 	"YellowBloomKnapsack/mini-yektanet/panel/logic"
+	"YellowBloomKnapsack/mini-yektanet/panel/grafana"
+	// "YellowBloomKnapsack/mini-yektanet/panel/grafana"
 	"github.com/golang/protobuf/proto"
 	"gorm.io/gorm"
 	"strconv"
@@ -149,6 +151,7 @@ func handleClick(messages []kafka.Message) error {
 		var publisher models.Publisher
 		if err := tx.Where("id = ?", event.PublisherId).First(&publisher).Error; err != nil {
 			tx.Rollback()
+			grafana.TransactionCount.WithLabelValues("click_failure").Inc()
 			return fmt.Errorf("failed to get publisher by username: %w", err)
 		}
 
@@ -164,6 +167,7 @@ func handleClick(messages []kafka.Message) error {
 
 		if err := tx.Create(&interaction).Error; err != nil {
 			tx.Rollback()
+			grafana.TransactionCount.WithLabelValues("click_failure").Inc()
 			return fmt.Errorf("failed to create interaction: %w", err)
 		}
 
@@ -171,12 +175,14 @@ func handleClick(messages []kafka.Message) error {
 		var ad models.Ad
 		if err := tx.Preload("Advertiser").First(&ad, event.AdId).Error; err != nil {
 			tx.Rollback()
+			grafana.TransactionCount.WithLabelValues("click_failure").Inc()
 			return fmt.Errorf("failed to get ad by ad id: %w", err)
 		}
 
 		// Update ad's total cost
 		if err := tx.Model(&ad).Update("total_cost", gorm.Expr("total_cost + ?", ad.Bid)).Error; err != nil {
 			tx.Rollback()
+			grafana.TransactionCount.WithLabelValues("click_failure").Inc()
 			return fmt.Errorf("failed to update total_cost: %w", err)
 		}
 
@@ -186,6 +192,7 @@ func handleClick(messages []kafka.Message) error {
 		yektanetPortion, err := strconv.Atoi(yektanetPortionString)
 		if err != nil || yektanetPortion < 0 || yektanetPortion > 100 {
 			tx.Rollback()
+			grafana.TransactionCount.WithLabelValues("click_failure").Inc()
 			return fmt.Errorf("failed to convert YEKTANET_PORTION to int: %w", err)
 		}
 
@@ -193,6 +200,7 @@ func handleClick(messages []kafka.Message) error {
 		publisherPortion := ad.Bid * int64(100-yektanetPortion) / 100
 		if err := tx.Model(&publisher).Update("balance", gorm.Expr("balance + ?", publisherPortion)).Error; err != nil {
 			tx.Rollback()
+			grafana.TransactionCount.WithLabelValues("click_failure").Inc()
 			return fmt.Errorf("failed to update balance: %w", err)
 		}
 
@@ -209,6 +217,7 @@ func handleClick(messages []kafka.Message) error {
 
 		if err := tx.Create(&transaction_publisher).Error; err != nil {
 			tx.Rollback()
+			grafana.TransactionCount.WithLabelValues("click_failure").Inc()
 			return fmt.Errorf("failed to create transaction publisher: %w", err)
 		}
 
@@ -222,6 +231,7 @@ func handleClick(messages []kafka.Message) error {
 		// Decrease advertiser's balance
 		if err := tx.Model(&ad.Advertiser).Update("balance", gorm.Expr("balance - ?", ad.Bid)).Error; err != nil {
 			tx.Rollback()
+			grafana.TransactionCount.WithLabelValues("click_failure").Inc()
 			return fmt.Errorf("Failed to update advertiser's balance: %w", err)
 		}
 
@@ -238,14 +248,20 @@ func handleClick(messages []kafka.Message) error {
 
 		if err := tx.Create(&transaction_advertiser).Error; err != nil {
 			tx.Rollback()
+			grafana.TransactionCount.WithLabelValues("click_failure").Inc()
 			return fmt.Errorf("Failed to update advertiser's balance: %w", err)
 		}
 
 		// Commit the transaction
 		if err := tx.Commit().Error; err != nil {
 			tx.Rollback()
+			grafana.TransactionCount.WithLabelValues("click_failure").Inc()
 			return fmt.Errorf("Failed to commit transaction: %w", err)
 		}
+
+		grafana.TotalRevenue.Add(float64(ad.Bid*int64(yektanetPortion)))
+		grafana.ClickCount.Inc()
+		grafana.TransactionCount.WithLabelValues("click_success").Inc()
 	}
 
 	return nil
@@ -277,5 +293,7 @@ func handleImpression(messages []kafka.Message) error {
 	if err := database.DB.Create(&interactionsToInsert).Error; err != nil {
 		return err
 	}
+
+	grafana.ImpressionCount.Add(float64(len(interactionsToInsert)))
 	return nil
 }
