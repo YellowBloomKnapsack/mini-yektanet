@@ -6,10 +6,21 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  - job_name: 'go_apps'
+  - job_name: 'panel'
     static_configs:
-      - targets: ['panel:8083', 'publisherwebsite:8084', 'adserver:8081', 'eventserver:8082']
-    metrics_path: '/metrics'
+    - targets: ['panel:8083']
+
+  - job_name: 'publisherwebsite'
+    static_configs:
+      - targets: ['publisherwebsite:8084']
+
+  - job_name: 'adserver'
+    static_configs:
+      - targets: ['adserver:8081']
+
+  - job_name: 'eventserver'
+    static_configs:
+      - targets: ['eventserver:8082']
 
   - job_name: 'redis'
     static_configs:

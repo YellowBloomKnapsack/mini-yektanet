@@ -6,20 +6,20 @@ import (
 )
 
 var (
-        ActiveAdsCount = promauto.NewGauge(prometheus.GaugeOpts{
-                Name: "active_ads_count",
-                Help: "The total number of active ads",
-        })
+	ActiveAdsCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "active_ads_count",
+		Help: "The total number of active ads",
+	})
 
-        AdvertisersCount = promauto.NewGauge(prometheus.GaugeOpts{
-                Name: "advertisers_count",
-                Help: "The total number of advertisers",
-        })
+	AdvertisersCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "advertisers_count",
+		Help: "The total number of advertisers",
+	})
 
-        PublishersCount = promauto.NewGauge(prometheus.GaugeOpts{
-                Name: "publishers_count",
-                Help: "The total number of publishers",
-        })
+	PublishersCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "publishers_count",
+		Help: "The total number of publishers",
+	})
 
         ImpressionCount = promauto.NewGauge(prometheus.GaugeOpts{
                 Name: "impression_count",
@@ -36,30 +36,30 @@ var (
                 Help: "The total revenue generated",
         })
 
-        NumberOfBids = promauto.NewGauge(prometheus.GaugeOpts{
-                Name: "number_bids",
-                Help: "total number of bids",
-        })
+	NumberOfBids = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "number_bids",
+		Help: "total number of bids",
+	})
 
-        AverageBid = promauto.NewGauge(prometheus.GaugeOpts{
-                Name: "average_bid",
-                Help: "The average bid amount",
-        })
+	AverageBid = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "average_bid",
+		Help: "The average bid amount",
+	})
 
-        TransactionCount = promauto.NewCounterVec(prometheus.CounterOpts{
-                Name: "transaction_count",
-                Help: "The number of transactions",
-        }, []string{"status"})
+	TransactionCount = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "transaction_count",
+		Help: "The number of transactions",
+	}, []string{"status"})
 
-        TotalAdvertiserBalance = promauto.NewGauge(prometheus.GaugeOpts{
-                Name: "total_advertiser_balance",
-                Help: "The total balance of all advertisers",
-        })
+	TotalAdvertiserBalance = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "total_advertiser_balance",
+		Help: "The total balance of all advertisers",
+	})
 
-        TotalPublisherBalance = promauto.NewGauge(prometheus.GaugeOpts{
-                Name: "total_publisher_balance",
-                Help: "The total balance of all publishers",
-        })
+	TotalPublisherBalance = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "total_publisher_balance",
+		Help: "The total balance of all publishers",
+	})
 )
 
 func InitializeMetrics() {
