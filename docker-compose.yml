@@ -170,7 +170,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ~/grafana:/var/lib/grafana
+      - grafana-data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
@@ -223,3 +223,4 @@ volumes:
   kafka-data:
   kafka-docker-sock:
   prometheus-data:
+  grafana-data:
