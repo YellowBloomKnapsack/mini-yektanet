@@ -175,7 +175,7 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
-      - prometheus:
+      prometheus:
         condition: service_healthy
   redis-exporter:
     image: oliver006/redis_exporter:v1.62.0
@@ -184,7 +184,7 @@ services:
     ports:
       - "9121:9121"
     depends_on:
-      - redis:
+      redis:
         condition: service_healthy
   kafka-exporter:
     image: danielqsj/kafka-exporter:v1.7.0
@@ -193,7 +193,7 @@ services:
     ports:
       - "9308:9308"
     depends_on:
-      - kafka:
+      kafka:
         condition: service_healthy
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:v0.15.0
@@ -202,7 +202,7 @@ services:
     ports:
       - "9187:9187"
     depends_on:
-      - db:
+      db:
         condition: service_healthy
   zookeeper-exporter:
     image: dabealu/zookeeper-exporter:v0.1.13
@@ -211,7 +211,7 @@ services:
     ports:
       - "9141:9141"
     depends_on:
-      - zookeeper:
+      zookeeper:
         condition: service_healthy
 
 volumes:
