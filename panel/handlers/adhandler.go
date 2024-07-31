@@ -1,15 +1,13 @@
 package handlers
 
 import (
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/panel/logic"
+	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,17 +29,6 @@ func GetActiveAds(c *gin.Context) {
 	for _, ad := range ads {
 		impressionsCount := getImpressionCounts(ad.AdsInteractions)
 
-		var keywordStrings []string
-		for _, keyword := range ad.Keywords {
-			cleanKeyword := strings.TrimSpace(keyword.Keywords)
-			if cleanKeyword != "" {
-				keywordStrings = append(keywordStrings, cleanKeyword)
-			}
-		}
-
-		// Join keywords into a comma-separated string
-		keywordString := strings.Join(keywordStrings, ", ")
-
 		adDTO := dto.AdDTO{
 			ID:                ad.ID,
 			Text:              ad.Text,
@@ -52,7 +39,7 @@ func GetActiveAds(c *gin.Context) {
 			BalanceAdvertiser: ad.Advertiser.Balance,
 			Impressions:       impressionsCount,
 			Score:             logic.GetScore(ad, impressionsCount),
-			Keywords:          keywordString,
+			Keywords:          logic.SplitAndClean(ad.Keywords.Keywords),
 		}
 		adDTOs = append(adDTOs, adDTO)
 	}

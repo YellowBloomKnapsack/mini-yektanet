@@ -20,14 +20,14 @@ const (
 	INTBASE      = 10
 	INTBIT32     = 32
 	INTBIT64     = 64
-	itemsPerPage = 40
+	itemsPerPage = 1
 )
 
 func AdvertiserPanel(c *gin.Context) {
 	advertiserUserName := c.Param("username")
 
 	var advertiser models.Advertiser
-	result := database.DB.Preload("Ads").Where("username = ?", advertiserUserName).First(&advertiser)
+	result := database.DB.Preload("Ads").Preload("Ads.Keywords").Where("username = ?", advertiserUserName).First(&advertiser)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			fmt.Printf("No advertiser found with username %s, creating a new one.\n", advertiserUserName)
@@ -214,7 +214,7 @@ func AdReport(c *gin.Context) {
 	adID, _ := strconv.ParseUint(c.Param("id"), INTBASE, INTBIT32)
 
 	var ad models.Ad
-	database.DB.Preload("AdsInteractions").Preload("Advertiser").First(&ad, adID)
+	database.DB.Preload("AdsInteractions").Preload("Keywords").Preload("Advertiser").First(&ad, adID)
 
 	impressions := 0
 	clicks := 0
@@ -238,6 +238,7 @@ func AdReport(c *gin.Context) {
 		"CTR":         ctr,
 		"TotalCost":   ad.TotalCost,
 		"Website":     ad.Website,
+		"Keywords":    ad.Keywords,
 	})
 }
 

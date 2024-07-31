@@ -34,45 +34,6 @@
             <button type="submit">Create Ad</button>
         </form>
     </div>
-    <div class="transactions-container">
-        <h3>Transactions</h3>
-        <table class="transactions-table">
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>Successful</th>
-                <th>Income</th>
-                <th>Time</th>
-            </tr>
-            </thead>
-            <tbody>
-            {{ range .Transactions }}
-                <tr>
-                    <td>{{ .ID }}</td>
-                    <td>{{ .Description }}</td>
-                    <td>{{ .Amount }}</td>
-                    <td>{{ if .Successful }}Yes{{ else }}No{{ end }}</td>
-                    <td>{{ if .Income }}Yes{{ else }}No{{ end }}</td>
-                    <td>{{ .Time.Format "2006-01-02 15:04:05" }}</td>
-                </tr>
-            {{ end }}
-            </tbody>
-        </table>
-
-        <div class="pagination">
-            {{ if gt .TotalPages 1 }}
-            <ul>
-                {{ range $i := until .TotalPages }}
-                <li class="{{ if eq (add $i 2) $.CurrentPage }}active{{ end }}">
-                    <a href="?page={{ add $i 1 }}">{{ add $i 1 }}</a>
-                </li>
-                {{ end }}
-            </ul>
-            {{ end }}
-        </div>
-    </div>
 
     <div class="ad-list">
         <h2>Your Ads</h2>
@@ -83,6 +44,7 @@
                 <p>Bid: ${{ .Bid }}</p>
                 <p>Website: {{ .Website }}</p>
                 <p>Status: {{ if .Active }}Active{{ else }}Inactive{{ end }}</p>
+                <p>Keywords: {{ .Keywords.Keywords }}</p>
                 <form action="/advertiser/{{ $.Username }}/toggle-ad" method="POST">
                     <input type="hidden" name="ad_id" value="{{ .ID }}">
                     <button type="submit">{{ if .Active }}Deactivate{{ else }}Activate{{ end }}</button>
@@ -104,7 +66,45 @@
             </div>
         {{ end }}
     </div>
-
+    <div class="transactions-container">
+        <h3>Transactions</h3>
+        <table class="transactions-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Successful</th>
+                <th>Income</th>
+                <th>Time</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{ range .Transactions }}
+            <tr>
+                <td>{{ .ID }}</td>
+                <td>{{ .Description }}</td>
+                <td>{{ .Amount }}</td>
+                <td>{{ if .Successful }}Yes{{ else }}No{{ end }}</td>
+                <td>{{ if .Income }}Yes{{ else }}No{{ end }}</td>
+                <td>{{ .Time.Format "2006-01-02 15:04:05" }}</td>
+            </tr>
+            {{ end }}
+            </tbody>
+        </table>
+        
+        <div class="pagination">
+            {{ if gt .TotalPages 1 }}
+            <ul>
+                {{ range $i := until .TotalPages }}
+                <li class="{{ if eq (add $i 2) $.CurrentPage }}active{{ end }}">
+                    <a href="?page={{ add $i 1 }}">{{ add $i 1 }}</a>
+                </li>
+                {{ end }}
+            </ul>
+            {{ end }}
+        </div>
+    </div>
 </div>
 <script>
     function showEditForm(adId) {
