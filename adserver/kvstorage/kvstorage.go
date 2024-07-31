@@ -3,6 +3,7 @@ package kvstorage
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -25,6 +26,12 @@ func NewKVStorage(addr string) *KVStorage {
 		Password: "", // no password set
 		DB:       1,  // use default DB
 	})
+
+	// Ping to check if connection is successful
+	_, err := client.Ping(ctx).Result()
+	if err != nil {
+		log.Printf("Failed to connect to Redis at %s for key-value storage: %v", addr, err)
+	}
 
 	return &KVStorage{client: client}
 }
