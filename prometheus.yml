@@ -6,21 +6,9 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  - job_name: 'panel'
+  - job_name: 'go_apps'
     static_configs:
-    - targets: ['panel:8083']
-
-  - job_name: 'publisherwebsite'
-    static_configs:
-      - targets: ['publisherwebsite:8084']
-
-  - job_name: 'adserver'
-    static_configs:
-      - targets: ['adserver:8081']
-
-  - job_name: 'eventserver'
-    static_configs:
-      - targets: ['eventserver:8082']
+      - targets: ['panel:8083', 'publisherwebsite:8084', 'adserver:8081', 'eventserver:8082']
 
   - job_name: 'redis'
     static_configs:
@@ -33,18 +21,3 @@ scrape_configs:
   - job_name: 'postgres'
     static_configs:
       - targets: ['postgres-exporter:9187']
-
-  - job_name: 'zookeeper'
-    static_configs:
-      - targets: ['zookeeper-exporter:9141']
-  # - job_name: 'redis'
-  #   static_configs:
-  #     - targets: ['redis:6379']
-
-  # - job_name: 'kafka'
-  #   static_configs:
-  #     - targets: ['kafka:9092']
-
-  # - job_name: 'postgres'
-  #   static_configs:
-  #     - targets: ['db:5432']
