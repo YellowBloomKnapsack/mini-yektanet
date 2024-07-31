@@ -4,14 +4,16 @@ import (
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
+	"YellowBloomKnapsack/mini-yektanet/panel/grafana"
 	"YellowBloomKnapsack/mini-yektanet/panel/handlers"
 	"YellowBloomKnapsack/mini-yektanet/panel/logic"
-	"YellowBloomKnapsack/mini-yektanet/panel/grafana"
+
 	// "YellowBloomKnapsack/mini-yektanet/panel/grafana"
-	"github.com/golang/protobuf/proto"
-	"gorm.io/gorm"
 	"strconv"
 	"time"
+
+	"github.com/golang/protobuf/proto"
+	"gorm.io/gorm"
 
 	"fmt"
 	"log"
@@ -222,8 +224,9 @@ func handleClick(messages []kafka.Message) error {
 		}
 
 		sum, _ := logic.GetSumOfBids(database.DB, ad.ID)
+		sum += event.Bid
 		log.Printf("Ad with id %d has %d cost over the last minute.\n", ad.ID, sum)
-		if sum > ad.Advertiser.Balance {
+		if sum > ad.Advertiser.Balance-event.Bid {
 			log.Println("Braking it")
 			go handlers.NotifyAdsBrake(ad.ID)
 		}
@@ -259,7 +262,7 @@ func handleClick(messages []kafka.Message) error {
 			return fmt.Errorf("Failed to commit transaction: %w", err)
 		}
 
-		grafana.TotalRevenue.Add(float64(ad.Bid*int64(yektanetPortion))/100)
+		grafana.TotalRevenue.Add(float64(ad.Bid*int64(yektanetPortion)) / 100)
 		grafana.TotalPublisherBalance.Add(float64(publisherPortion))
 		grafana.TotalAdvertiserBalance.Add(-float64(transaction_advertiser.Amount))
 		grafana.ClickCount.Inc()
