@@ -11,32 +11,32 @@ var (
                 Help: "The total number of active ads",
         })
 
-        AdvertisersCount = promauto.NewGauge(prometheus.GaugeOpts{
+        AdvertisersCount = promauto.NewCounter(prometheus.CounterOpts{
                 Name: "advertisers_count",
                 Help: "The total number of advertisers",
         })
 
-        PublishersCount = promauto.NewGauge(prometheus.GaugeOpts{
+        PublishersCount = promauto.NewCounter(prometheus.CounterOpts{
                 Name: "publishers_count",
                 Help: "The total number of publishers",
         })
 
-        ImpressionCount = promauto.NewGauge(prometheus.GaugeOpts{
+        ImpressionCount = promauto.NewCounter(prometheus.CounterOpts{
                 Name: "impression_count",
                 Help: "The total number of impressions",
         })
 
-        ClickCount = promauto.NewGauge(prometheus.GaugeOpts{
+        ClickCount = promauto.NewCounter(prometheus.CounterOpts{
                 Name: "click_count",
                 Help: "The total number of clicks",
         })
 
-        TotalRevenue = promauto.NewGauge(prometheus.GaugeOpts{
+        TotalRevenue = promauto.NewCounter(prometheus.CounterOpts{
                 Name: "total_revenue",
                 Help: "The total revenue generated",
         })
 
-        NumberOfBids = promauto.NewGauge(prometheus.GaugeOpts{
+        NumberOfBids = promauto.NewCounter(prometheus.CounterOpts{
                 Name: "number_bids",
                 Help: "total number of bids",
         })
@@ -63,15 +63,16 @@ var (
 )
 
 func InitializeMetrics() {
-        ActiveAdsCount.Set(0)
-        AdvertisersCount.Set(0)
-        PublishersCount.Set(0)
-        ImpressionCount.Set(0)
-        ClickCount.Set(0)
-        TotalRevenue.Set(0)
-        NumberOfBids.Set(0)
-        AverageBid.Set(0)
-        //TransactionCount // different setting needed for this
-        TotalAdvertiserBalance.Set(0)
-        TotalPublisherBalance.Set(0)
+        // ActiveAdsCount.Set(0)
+        // AdvertisersCount.Set(0)
+        // PublishersCount.Set(0)
+        // ImpressionCount.Set(0)
+        // ClickCount.Set(0)
+        // TotalRevenue.Set(0)
+        // NumberOfBids.Set(0)
+        // AverageBid.Set(0)
+        // //TransactionCount // different setting needed for this
+        // TotalAdvertiserBalance.Set(0)
+        // TotalPublisherBalance.Set(0)
+        return 
 }
