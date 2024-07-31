@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"YellowBloomKnapsack/mini-yektanet/adserver/cache"
+	"YellowBloomKnapsack/mini-yektanet/adserver/crawler"
 	"YellowBloomKnapsack/mini-yektanet/adserver/handlers"
 	"YellowBloomKnapsack/mini-yektanet/adserver/kvstorage"
 	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
@@ -18,7 +19,7 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(".env", "../common/.env", "../eventserver/.env", "../panel/.env"); err != nil {
+	if err := godotenv.Load(".env", "../common/.env", "../eventserver/.env", "../panel/.env", "../publisherwebsite/.env"); err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
@@ -26,9 +27,11 @@ func main() {
 	redisUrl := os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT")
 	cacheService := cache.NewAdServerCache(redisUrl)
 	kvStorageService := kvstorage.NewKVStorage(redisUrl)
+	crawlerService := crawler.NewCrawler(kvStorageService)
 	logicService := logic.NewLogicService(cacheService, kvStorageService)
 
 	handler := handlers.NewAdServerHandler(logicService, tokenHandler)
+	crawlerService.Crawl()
 
 	r := gin.Default()
 
