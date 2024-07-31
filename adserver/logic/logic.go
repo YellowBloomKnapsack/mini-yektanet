@@ -9,15 +9,17 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/adserver/grafana"
+	"YellowBloomKnapsack/mini-yektanet/adserver/kvstorage"
 	"YellowBloomKnapsack/mini-yektanet/common/cache"
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
 
 type LogicInterface interface {
-	GetBestAd() (*dto.AdDTO, error)
+	GetBestAd(publisherId uint) (*dto.AdDTO, error)
 	StartTicker()
 	BrakeAd(adId uint)
 }
@@ -26,18 +28,20 @@ type LogicService struct {
 	visitedAds                []*dto.AdDTO
 	unvisitedAds              []*dto.AdDTO
 	brakedAdsCache            cache.CacheInterface
+	kvStorage                 kvstorage.KVStorageInterface
 	getAdsAPIPath             string
 	interval                  int
 	firstChanceMaxImpressions int
 }
 
-func NewLogicService(cache cache.CacheInterface) LogicInterface {
+func NewLogicService(cache cache.CacheInterface, kvStorage kvstorage.KVStorageInterface) LogicInterface {
 	interval, _ := strconv.Atoi(os.Getenv("ADS_FETCH_INTERVAL_SECS"))
 	firstChanceMaxImpressions, _ := strconv.Atoi(os.Getenv("FIRST_CHANCE_MAX_IMPRESSIONS"))
 	return &LogicService{
 		visitedAds:                make([]*dto.AdDTO, 0),
 		unvisitedAds:              make([]*dto.AdDTO, 0),
 		brakedAdsCache:            cache,
+		kvStorage:                 kvStorage,
 		getAdsAPIPath:             "http://" + os.Getenv("PANEL_HOSTNAME") + ":" + os.Getenv("PANEL_PORT") + os.Getenv("GET_ADS_API"),
 		interval:                  interval,
 		firstChanceMaxImpressions: firstChanceMaxImpressions,
@@ -71,14 +75,46 @@ func (ls *LogicService) randomOn(ads []*dto.AdDTO) *dto.AdDTO {
 	return ads[rand.IntN(len(ads))]
 }
 
-func (ls *LogicService) isValid(ad *dto.AdDTO) bool {
-	return !ls.brakedAdsCache.IsPresent(strconv.FormatUint(uint64(ad.ID), 10))
+func (ls *LogicService) hasIntersection(lhs, rhs []string) bool {
+	// Create a map to store elements of lhs
+	elements := make(map[string]struct{})
+	for _, item := range lhs {
+		elements[item] = struct{}{}
+	}
+
+	// Check if any element in rhs exists in the map
+	for _, item := range rhs {
+		if _, exists := elements[item]; exists {
+			return true
+		}
+	}
+
+	return false
 }
 
-func (ls *LogicService) validsOn(ads []*dto.AdDTO) []*dto.AdDTO {
+func (ls *LogicService) isValid(ad *dto.AdDTO, publisherId uint) bool {
+	isBraked := ls.brakedAdsCache.IsPresent(strconv.FormatUint(uint64(ad.ID), 10))
+	if isBraked {
+		return false
+	}
+
+	if len(ad.Keywords) == 0 {
+		return true
+	}
+
+	publisherIdStr := strconv.FormatUint(uint64(publisherId), 10)
+	publisherKeywords, err := ls.kvStorage.Get(publisherIdStr)
+	if err != nil {
+		return true
+	}
+
+	return ls.hasIntersection(ad.Keywords, strings.Split(publisherKeywords, ","))
+}
+
+func (ls *LogicService) validsOn(ads []*dto.AdDTO, publisherId uint) []*dto.AdDTO {
 	result := make([]*dto.AdDTO, 0)
 	for _, ad := range ads {
-		if ls.isValid(ad) {
+		if ls.isValid(ad, publisherId) {
 			result = append(result, ad)
 		}
 	}
@@ -86,9 +122,9 @@ func (ls *LogicService) validsOn(ads []*dto.AdDTO) []*dto.AdDTO {
 	return result
 }
 
-func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
-	validVisitedsAds := ls.validsOn(ls.visitedAds)
-	validUnvisitedsAds := ls.validsOn(ls.unvisitedAds)
+func (ls *LogicService) GetBestAd(publisherId uint) (*dto.AdDTO, error) {
+	validVisitedsAds := ls.validsOn(ls.visitedAds, publisherId)
+	validUnvisitedsAds := ls.validsOn(ls.unvisitedAds, publisherId)
 
 	if len(validUnvisitedsAds) == 0 && len(validVisitedsAds) == 0 {
 		log.Println("No ad was found")

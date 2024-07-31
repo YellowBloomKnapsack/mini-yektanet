@@ -11,6 +11,7 @@ import (
 
 	"YellowBloomKnapsack/mini-yektanet/adserver/cache"
 	"YellowBloomKnapsack/mini-yektanet/adserver/handlers"
+	"YellowBloomKnapsack/mini-yektanet/adserver/kvstorage"
 	"YellowBloomKnapsack/mini-yektanet/adserver/logic"
 	"YellowBloomKnapsack/mini-yektanet/common/grafana"
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
@@ -24,7 +25,8 @@ func main() {
 	tokenHandler := tokenhandler.NewTokenHandlerService()
 	redisUrl := os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT")
 	cacheService := cache.NewAdServerCache(redisUrl)
-	logicService := logic.NewLogicService(cacheService)
+	kvStorageService := kvstorage.NewKVStorage(redisUrl)
+	logicService := logic.NewLogicService(cacheService, kvStorageService)
 
 	handler := handlers.NewAdServerHandler(logicService, tokenHandler)
 

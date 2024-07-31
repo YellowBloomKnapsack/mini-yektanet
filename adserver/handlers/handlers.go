@@ -34,7 +34,9 @@ func (h *AdServerHandler) GetAd(c *gin.Context) {
 	timer := prometheus.NewTimer(grafana.AdRequestDuration)
 	defer timer.ObserveDuration()
 
-	chosenAd, err := h.logicService.GetBestAd()
+	publisherId, _ := strconv.Atoi(c.Param("publisherId"))
+
+	chosenAd, err := h.logicService.GetBestAd(uint(publisherId))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{})
 		return
@@ -46,8 +48,6 @@ func (h *AdServerHandler) GetAd(c *gin.Context) {
 
 	clickReqPath := os.Getenv("CLICK_REQ_PATH")
 	impressionReqPath := os.Getenv("IMPRESSION_REQ_PATH")
-
-	publisherId, _ := strconv.Atoi(c.Param("publisherId"))
 
 	privateKey := os.Getenv("PRIVATE_KEY")
 	key, _ := base64.StdEncoding.DecodeString(privateKey)
