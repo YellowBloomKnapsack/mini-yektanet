@@ -6,11 +6,11 @@ import (
 
 	"YellowBloomKnapsack/mini-yektanet/eventserver/cache"
 
-	"YellowBloomKnapsack/mini-yektanet/common/grafana"
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
 	"YellowBloomKnapsack/mini-yektanet/eventserver/handlers"
 	"YellowBloomKnapsack/mini-yektanet/eventserver/producer"
 
+	"github.com/chenjiandongx/ginprom"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -39,9 +39,9 @@ func main() {
 	}))
 
 	// Define the routes
-	r.Use(grafana.PrometheusMiddleware())
+	r.Use(ginprom.PromMiddleware(nil))
 
-	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	r.GET("/metrics", ginprom.PromHandler(promhttp.Handler()))
 	r.POST(os.Getenv("CLICK_REQ_PATH"), handler.PostClick)
 	r.POST(os.Getenv("IMPRESSION_REQ_PATH"), handler.PostImpression)
 

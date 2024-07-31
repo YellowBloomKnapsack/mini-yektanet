@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/protobuf/proto"
 
+	"YellowBloomKnapsack/mini-yektanet/eventserver/grafana"
 	"YellowBloomKnapsack/mini-yektanet/common/cache"
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 	"YellowBloomKnapsack/mini-yektanet/common/tokenhandler"
@@ -57,9 +58,11 @@ func (h *EventServerHandler) PostClick(c *gin.Context) {
 	token := req.Token
 	data, err := h.tokenHandler.VerifyToken(token, key)
 	if err != nil {
+		grafana.TokenValidationTotal.WithLabelValues("invalid").Inc()
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
 	}
+	grafana.TokenValidationTotal.WithLabelValues("valid").Inc()
 
 	// Running in goroutine so the server wouldn't have to wait
 	go h.produceClickIfTokenValid(token, data)
