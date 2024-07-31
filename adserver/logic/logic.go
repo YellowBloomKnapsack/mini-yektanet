@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"YellowBloomKnapsack/mini-yektanet/adserver/grafana"
 	"YellowBloomKnapsack/mini-yektanet/common/cache"
 	"YellowBloomKnapsack/mini-yektanet/common/dto"
 )
@@ -91,16 +92,19 @@ func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
 
 	if len(validUnvisitedsAds) == 0 && len(validVisitedsAds) == 0 {
 		log.Println("No ad was found")
+		grafana.AdsFetchErrorsTotal.Inc()
 		return nil, fmt.Errorf("no ad was found")
 	}
 
 	if len(validUnvisitedsAds) == 0 {
 		log.Println("Cannot find any first-chance ads, doing auction")
+		grafana.AdSelectionMethodTotal.WithLabelValues("best_score_visited").Inc()
 		return ls.bestScoreOn(validVisitedsAds), nil
 	}
 
 	if len(validVisitedsAds) == 0 {
 		log.Println("Cannot find any visited ads, choosing a random first-chance ad")
+		grafana.AdSelectionMethodTotal.WithLabelValues("random_unvisited").Inc()
 		return ls.randomOn(validUnvisitedsAds), nil
 	}
 
@@ -108,9 +112,11 @@ func (ls *LogicService) GetBestAd() (*dto.AdDTO, error) {
 	unvisitedChance, _ := strconv.Atoi(os.Getenv("UNVISITED_CHANCE"))
 	if randomNumber < float32(unvisitedChance)/100.0 {
 		log.Println("Showing a random first-chance ad")
+		grafana.AdSelectionMethodTotal.WithLabelValues("random_unvisited").Inc()
 		return ls.randomOn(validUnvisitedsAds), nil
 	} else {
 		log.Println("Doing auction")
+		grafana.AdSelectionMethodTotal.WithLabelValues("best_score_visited").Inc()
 		return ls.bestScoreOn(validVisitedsAds), nil
 	}
 }
@@ -155,6 +161,13 @@ func (ls *LogicService) updateAdsList() error {
 	ls.visitedAds = newVisitedAds
 	ls.unvisitedAds = newUnvisitedAds
 
+	grafana.AdsTotal.Set(float64(new_len))
+	grafana.AdsVisitedCount.Set(float64(len(newVisitedAds)))
+	grafana.AdsUnvisitedCount.Set(float64(len(newUnvisitedAds)))
+	if new_len > old_len {
+		grafana.AdsNewAddedTotal.Add(float64(new_len - old_len))
+	}
+
 	return nil
 }
 
@@ -180,4 +193,5 @@ func (ls *LogicService) StartTicker() {
 func (ls *LogicService) BrakeAd(adId uint) {
 	log.Printf("Braking ad with id %d\n", adId)
 	ls.brakedAdsCache.Add(strconv.FormatUint(uint64(adId), 10))
+	grafana.AdsBrakedCount.Inc()
 }
