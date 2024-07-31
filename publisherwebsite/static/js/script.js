@@ -1,23 +1,13 @@
-/*
-JSON data received from AdServer must have the following fields:
-{
-    "title"
-    "image_link"
-    "impression_link"
-    "click_link"
-}
-----
-
-*/
 // var path = require("path")
 // const publisherName = %publisherName%
 // const AdServerAPILink = %AdServerAPILink%
+
+// hardcoded for the purposes of testing. the actual scriptTemplate.js does not work like this
 const arr = window.location.href.split('/')
 const publisherName = arr[arr.length-1]
 // const AdServerAPILink = "http://localhost:8081"
 const AdServerAPILink = "http://"+arr[arr.length-2].replace("8084","8081")
 let publisherId = 1;
-// hardcoded for the purposes of testing. the actual scriptTemplate.js does not work like this
 switch (publisherName) {
     case "varzesh3": publisherId = 1; break;
     case "digikala": publisherId = 2; break;
@@ -29,22 +19,38 @@ switch (publisherName) {
 fetch(AdServerAPILink+"/"+publisherId)
 .then((res) => {
     if (!res.ok) {
-        throw new Error("unable to load from ad server.")
+        throw new Error("unable to load from ad server")
     }
     return res.json()
 }).then((data) => {
+
     console.log(data)
-    const adDiv = document.createElement("div")
+
+    // ad image
     const img = document.createElement("img")
     img.src = data["image_link"]
-    const title = document.createTextNode(data["title"])
+    img.style.height = '50%'
+    img.style.width = '100%'
+    img.style.display = 'block'
+
+    // ad title
+    const title = document.createElement("p")
+    title.appendChild(document.createTextNode(data["title"]))
+    title.style.margin = "2px 0 0 0"
+
+    // ad container div
+    const adDiv = document.createElement("div")
     adDiv.appendChild(img)
     adDiv.appendChild(title)
     adDiv.onclick = ()=>clickHandler(data)
-    adDiv.style="cursor:pointer;border:solid black 20px;"
+    adDiv.style.cursor = 'pointer'
+    adDiv.style.border = 'solid black 2px'
+    adDiv.style.width = '10%'
+    adDiv.style.padding = '5px'
+    adDiv.style.margin = 'auto'
     document.getElementsByTagName("body")[0].appendChild(adDiv)
 
-    // handling when an element is in view
+    // handle impression when an element is in view
     let viewed = false
     let options = {
         root: null, // i.e. viewport
