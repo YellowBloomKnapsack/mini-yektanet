@@ -12,7 +12,7 @@ services:
       # env_file:
       # - ./panel/.env
     volumes:
-      - "panel_static:/app/panel/static"
+      - "panel_static:/app/panel/static/uploads"
     depends_on:
       db:
         condition: service_healthy
@@ -26,9 +26,6 @@ services:
     restart: unless-stopped
     ports:
       - "8084:8084"
-    volumes:
-      - "publisherwebsite_static:/app/publisherwebsite/static"
-      # - "publisherwebsite_html:/app/publisherwebsite/html"
   adserver:
     build:
       context: .
@@ -202,15 +199,6 @@ services:
       - "9187:9187"
     depends_on:
       db:
-        condition: service_healthy
-  zookeeper-exporter:
-    image: dabealu/zookeeper-exporter:v0.1.13
-    environment:
-      - ZK_SERVER=zookeeper:2181
-    ports:
-      - "9141:9141"
-    depends_on:
-      zookeeper:
         condition: service_healthy
 
 volumes:
