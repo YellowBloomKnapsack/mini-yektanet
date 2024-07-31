@@ -4,6 +4,7 @@ import (
         "log"
         "os"
         "strconv"
+        "fmt"
 
         "YellowBloomKnapsack/mini-yektanet/common/models"
         "YellowBloomKnapsack/mini-yektanet/panel/database"
@@ -105,16 +106,18 @@ func InitializeMetrics() {
         ClickCount.Add(float64(clickCount))
 
         // Initialize TotalRevenue
-        var totalRevenue int64
+        var advertisersBalance int64
         yektanetPortionString := os.Getenv("YEKTANET_PORTION")
         yektanetPortion, _ := strconv.ParseFloat(yektanetPortionString, 64)
         yektanetPortion /= 100
-        // yektanet revenue is calculated based on transactions
-        selectQueryString := "SUM(amount)*"+strconv.FormatFloat(yektanetPortion/(1-yektanetPortion), 'f', -1, 64)
-        if err := database.DB.Model(&models.Transaction{}).Select(selectQueryString).Where("income = ?", true).Scan(&totalRevenue).Error; err != nil {
+
+        // yektanet revenue is calculated based on advertiser transactions
+        if err := database.DB.Model(&models.Transaction{}).Select("SUM(amount)").Where("income = ? AND customer_type = ?", true, models.Customer_Publisher).Scan(&advertisersBalance).Error; err != nil {
                 log.Printf("Error calculating total revenue: %v", err)
+                advertisersBalance = 0
         }
-        TotalRevenue.Add(float64(totalRevenue))
+        TotalRevenue.Add(float64(float64(advertisersBalance)*yektanetPortion)/(1-yektanetPortion))
+        fmt.Println(float64(float64(advertisersBalance)*yektanetPortion)/(1-yektanetPortion))
 
         // Initialize NumberOfBids and AverageBid
         var totalBids int64
