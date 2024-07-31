@@ -20,7 +20,7 @@ const (
 	INTBASE      = 10
 	INTBIT32     = 32
 	INTBIT64     = 64
-	itemsPerPage = 1
+	itemsPerPage = 47
 )
 
 func AdvertiserPanel(c *gin.Context) {
