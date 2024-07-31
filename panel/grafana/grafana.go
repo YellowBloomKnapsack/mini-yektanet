@@ -1,23 +1,29 @@
 package grafana
 
 import (
+        "log"
+        "os"
+        "strconv"
+        "fmt"
+
+        "YellowBloomKnapsack/mini-yektanet/common/models"
+        "YellowBloomKnapsack/mini-yektanet/panel/database"
         "github.com/prometheus/client_golang/prometheus"
         "github.com/prometheus/client_golang/prometheus/promauto"
-        "YellowBloomKnapsack/mini-yektanet/common/grafana"
 )
 
 var (
-        ActiveAdsCount = promauto.NewGauge(prometheus.GaugeOpts{
-                Name: "active_ads_count",
-                Help: "The total number of active ads",
-        })
+	ActiveAdsCount = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "active_ads_count",
+		Help: "The total number of active ads",
+	})
 
-        AdvertisersCount = promauto.NewGauge(prometheus.GaugeOpts{
+        AdvertisersCount = promauto.NewCounter(prometheus.CounterOpts{
                 Name: "advertisers_count",
                 Help: "The total number of advertisers",
         })
 
-        PublishersCount = promauto.NewGauge(prometheus.GaugeOpts{
+        PublishersCount = promauto.NewCounter(prometheus.CounterOpts{
                 Name: "publishers_count",
                 Help: "The total number of publishers",
         })
@@ -37,42 +43,119 @@ var (
                 Help: "The total revenue generated",
         })
 
-        NumberOfBids = promauto.NewGauge(prometheus.GaugeOpts{
+        NumberOfBids = promauto.NewCounter(prometheus.CounterOpts{
                 Name: "number_bids",
                 Help: "total number of bids",
         })
 
-        AverageBid = promauto.NewGauge(prometheus.GaugeOpts{
-                Name: "average_bid",
-                Help: "The average bid amount",
-        })
+	AverageBid = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "average_bid",
+		Help: "The average bid amount",
+	})
 
-        TransactionCount = promauto.NewCounterVec(prometheus.CounterOpts{
-                Name: "transaction_count",
-                Help: "The number of transactions",
-        }, []string{"status"})
+	TransactionCount = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "transaction_count",
+		Help: "The number of transactions",
+	}, []string{"status"})
 
-        TotalAdvertiserBalance = promauto.NewGauge(prometheus.GaugeOpts{
-                Name: "total_advertiser_balance",
-                Help: "The total balance of all advertisers",
-        })
+	TotalAdvertiserBalance = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "total_advertiser_balance",
+		Help: "The total balance of all advertisers",
+	})
 
-        TotalPublisherBalance = promauto.NewGauge(prometheus.GaugeOpts{
-                Name: "total_publisher_balance",
-                Help: "The total balance of all publishers",
-        })
+	TotalPublisherBalance = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "total_publisher_balance",
+		Help: "The total balance of all publishers",
+	})
 )
 
 func InitializeMetrics() {
-        ActiveAdsCount.Set(0)
-        AdvertisersCount.Set(0)
-        PublishersCount.Set(0)
-        ImpressionCount.Set(0)
-        ClickCount.Set(0)
-        TotalRevenue.Set(0)
-        NumberOfBids.Set(0)
-        AverageBid.Set(0)
-        TransactionCount.Set(0)
-        TotalAdvertiserBalance.Set(0)
-        TotalPublisherBalance.Set(0)
+// Initialize ActiveAdsCount
+        var activeAdsCount int64
+        if err := database.DB.Model(&models.Ad{}).Where("active = ?", true).Count(&activeAdsCount).Error; err != nil {
+                log.Printf("Error counting active ads: %v", err)
+        }
+        ActiveAdsCount.Set(float64(activeAdsCount))
+
+        // Initialize AdvertisersCount
+        var advertisersCount int64
+        if err := database.DB.Model(&models.Advertiser{}).Count(&advertisersCount).Error; err != nil {
+                log.Printf("Error counting advertisers: %v", err)
+        }
+        AdvertisersCount.Add(float64(advertisersCount)) // Counter metrics use Add instead of Set
+
+        // Initialize PublishersCount
+        var publishersCount int64
+        if err := database.DB.Model(&models.Publisher{}).Count(&publishersCount).Error; err != nil {
+                log.Printf("Error counting publishers: %v", err)
+        }
+        PublishersCount.Add(float64(publishersCount)) // Counter metrics use Add instead of Set
+
+        // Initialize ImpressionCount
+        var impressionCount int64
+        if err := database.DB.Model(&models.AdsInteraction{}).Where("type = ?", int(models.Impression)).Count(&impressionCount).Error; err != nil {
+                log.Printf("Error counting impressions: %v", err)
+        }
+        ImpressionCount.Add(float64(impressionCount))
+
+        // Initialize ClickCount
+        var clickCount int64
+        if err := database.DB.Model(&models.AdsInteraction{}).Where("type = ?", int(models.Click)).Count(&clickCount).Error; err != nil {
+                log.Printf("Error counting clicks: %v", err)
+        }
+        ClickCount.Add(float64(clickCount))
+
+        // Initialize TotalRevenue
+        var advertisersBalance int64
+        yektanetPortionString := os.Getenv("YEKTANET_PORTION")
+        yektanetPortion, _ := strconv.ParseFloat(yektanetPortionString, 64)
+        yektanetPortion /= 100
+
+        // yektanet revenue is calculated based on advertiser transactions
+        if err := database.DB.Model(&models.Transaction{}).Select("SUM(amount)").Where("income = ? AND customer_type = ?", true, models.Customer_Publisher).Scan(&advertisersBalance).Error; err != nil {
+                log.Printf("Error calculating total revenue: %v", err)
+                advertisersBalance = 0
+        }
+        TotalRevenue.Add(float64(float64(advertisersBalance)*yektanetPortion)/(1-yektanetPortion))
+        fmt.Println(float64(float64(advertisersBalance)*yektanetPortion)/(1-yektanetPortion))
+
+        // Initialize NumberOfBids and AverageBid
+        var totalBids int64
+        var sumBids int64
+        if err := database.DB.Model(&models.Ad{}).Count(&totalBids).Error; err != nil {
+                log.Printf("Error counting bids: %v", err)
+        }
+        if err := database.DB.Model(&models.Ad{}).Select("SUM(bid)").Scan(&sumBids).Error; err != nil {
+                log.Printf("Error summing bids: %v", err)
+        }
+        NumberOfBids.Add(float64(totalBids))
+        if totalBids > 0 {
+                AverageBid.Set(float64(sumBids) / float64(totalBids))
+        }
+
+        // Initialize TotalAdvertiserBalance
+        var totalAdvertiserBalance int64
+        if err := database.DB.Model(&models.Advertiser{}).Select("SUM(balance)").Scan(&totalAdvertiserBalance).Error; err != nil {
+                log.Printf("Error calculating total advertiser balance: %v", err)
+        }
+        TotalAdvertiserBalance.Set(float64(totalAdvertiserBalance))
+
+        // Initialize TotalPublisherBalance
+        var totalPublisherBalance int64
+        if err := database.DB.Model(&models.Publisher{}).Select("SUM(balance)").Scan(&totalPublisherBalance).Error; err != nil {
+                log.Printf("Error calculating total publisher balance: %v", err)
+        }
+        TotalPublisherBalance.Set(float64(totalPublisherBalance))
+
+        // Initialize TransactionCount
+        var successTransactions int64
+        var failedTransactions int64
+        if err := database.DB.Model(&models.Transaction{}).Where("successful = ?", true).Count(&successTransactions).Error; err != nil {
+                log.Printf("Error counting successful transactions: %v", err)
+        }
+        if err := database.DB.Model(&models.Transaction{}).Where("successful = ?", false).Count(&failedTransactions).Error; err != nil {
+                log.Printf("Error counting failed transactions: %v", err)
+        }
+        TransactionCount.WithLabelValues("click_success").Add(float64(successTransactions))
+        TransactionCount.WithLabelValues("click_failure").Add(float64(failedTransactions))
 }

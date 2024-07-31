@@ -1,10 +1,12 @@
 package producer
 
 import (
+	"YellowBloomKnapsack/mini-yektanet/eventserver/grafana"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"log"
 	"os"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 type ProducerInterface interface {
@@ -40,7 +42,11 @@ func (p *KafkaProducer) Produce(protoData []byte, topicName string) error {
 		TopicPartition: kafka.TopicPartition{Topic: &topicName, Partition: kafka.PartitionAny},
 		Value:          protoData,
 	}, nil)
-
+	if err != nil {
+		grafana.KafkaProducerMessages.WithLabelValues(topicName, "failure").Inc()
+	} else {
+		grafana.KafkaProducerMessages.WithLabelValues(topicName, "success").Inc()
+	}
 	p.producer.Flush(10000)
 	return err
 }

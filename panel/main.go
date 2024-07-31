@@ -6,11 +6,12 @@ import (
 	"os"
 	"strconv"
 
-	"YellowBloomKnapsack/mini-yektanet/common/grafana"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
+	panelGrafana "YellowBloomKnapsack/mini-yektanet/panel/grafana"
 	"YellowBloomKnapsack/mini-yektanet/panel/handlers"
 	"YellowBloomKnapsack/mini-yektanet/panel/reporter"
 
+	"github.com/chenjiandongx/ginprom"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -36,7 +37,7 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins: true,
 	}))
-	r.Use(grafana.PrometheusMiddleware())
+	r.Use(ginprom.PromMiddleware(nil))
 	r.SetFuncMap(template.FuncMap{
 		"add": func(a, b int) int {
 			return a + b
@@ -51,7 +52,7 @@ func main() {
 		},
 	})
 
-	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	r.GET("/metrics", ginprom.PromHandler(promhttp.Handler()))
 	r.LoadHTMLGlob("templates/*")
 	r.Static("/static", "./static")
 
@@ -77,5 +78,7 @@ func main() {
 	if port == "" {
 		port = "8083"
 	}
+	panelGrafana.InitializeMetrics()
+
 	r.Run(os.Getenv("GIN_HOSTNAME") + ":" + port)
 }

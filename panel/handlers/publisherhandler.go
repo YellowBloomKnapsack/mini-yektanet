@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"YellowBloomKnapsack/mini-yektanet/panel/grafana"
 )
 
 func PublisherPanel(c *gin.Context) {
@@ -30,6 +31,7 @@ func PublisherPanel(c *gin.Context) {
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
 		fmt.Println("New Publisher created:", publisher)
+		grafana.PublishersCount.Inc()
 		// c.JSON(http.StatusNotFound, gin.H{"error": "Publisher not found"})
 		// return
 	}
@@ -93,9 +95,10 @@ func WithdrawPublisherBalance(c *gin.Context) {
 		Time:         time.Now(),
 		Description:  "withdraw wallet",
 	}
-	if err := database.DB.Create(&transaction).Error; err != nil {
+	if err := tx.Create(&transaction).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create transaction"})
+		grafana.TransactionCount.WithLabelValues("withdraw_balance_failure").Inc()
 		return
 	}
 
@@ -104,15 +107,24 @@ func WithdrawPublisherBalance(c *gin.Context) {
 	if err := tx.Save(&publisher).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update publisher balance"})
+		grafana.TransactionCount.WithLabelValues("withdraw_balance_failure").Inc()
 		return
 	}
 
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		fmt.Printf("Failed to commit transaction: %v", err)
+		grafana.TransactionCount.WithLabelValues("withdraw_balance_failure").Inc()
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":    fmt.Sprintf("Withdrawn amount: %d", amount),
 		"newBalance": publisher.Balance,
 	})
+
+	// update grafana metrics
+	grafana.TotalPublisherBalance.Set(float64(publisher.Balance))
+	grafana.TransactionCount.WithLabelValues("withdraw_success_failure").Inc()
 }
 
 func prepareChartData(interactions []models.AdsInteraction, yektanetPortion int) map[string]interface{} {
