@@ -1,11 +1,11 @@
 package main
 
 import (
-	"YellowBloomKnapsack/mini-yektanet/common/grafana"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/chenjiandongx/ginprom"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -31,9 +31,9 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins: true,
 	}))
-	r.Use(grafana.PrometheusMiddleware())
+	r.Use(ginprom.PromMiddleware(nil))
 
-	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	r.GET("/metrics", ginprom.PromHandler(promhttp.Handler()))
 	r.GET("/:siteName", getSite)
 	r.LoadHTMLGlob("html/*")
 	r.Static("/static", "./static")
