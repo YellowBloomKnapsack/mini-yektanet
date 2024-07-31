@@ -2,6 +2,8 @@ package grafana
 
 import (
         "log"
+        "os"
+        "strconv"
 
         "YellowBloomKnapsack/mini-yektanet/common/models"
         "YellowBloomKnapsack/mini-yektanet/panel/database"
@@ -104,7 +106,12 @@ func InitializeMetrics() {
 
         // Initialize TotalRevenue
         var totalRevenue int64
-        if err := database.DB.Model(&models.Transaction{}).Select("SUM(amount)").Where("income = ?", true).Scan(&totalRevenue).Error; err != nil {
+        yektanetPortionString := os.Getenv("YEKTANET_PORTION")
+        yektanetPortion, _ := strconv.ParseFloat(yektanetPortionString, 64)
+        yektanetPortion /= 100
+        // yektanet revenue is calculated based on transactions
+        selectQueryString := "SUM(amount)*"+strconv.FormatFloat(yektanetPortion/(1-yektanetPortion), 'f', -1, 64)
+        if err := database.DB.Model(&models.Transaction{}).Select(selectQueryString).Where("income = ?", true).Scan(&totalRevenue).Error; err != nil {
                 log.Printf("Error calculating total revenue: %v", err)
         }
         TotalRevenue.Add(float64(totalRevenue))
