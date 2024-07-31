@@ -113,7 +113,7 @@ func WithdrawPublisherBalance(c *gin.Context) {
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		fmt.Printf("Failed to commit transaction: %w", err)
+		fmt.Printf("Failed to commit transaction: %v", err)
 		grafana.TransactionCount.WithLabelValues("withdraw_balance_failure").Inc()
 	}
 
