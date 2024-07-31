@@ -224,6 +224,7 @@ func handleClick(messages []kafka.Message) error {
 		}
 
 		sum, _ := logic.GetSumOfBids(database.DB, ad.ID)
+		// To add the current click financials
 		sum += event.Bid
 		log.Printf("Ad with id %d has %d cost over the last minute.\n", ad.ID, sum)
 		if sum > ad.Advertiser.Balance-event.Bid {

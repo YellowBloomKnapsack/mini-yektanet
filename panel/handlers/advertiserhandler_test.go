@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -48,6 +49,19 @@ func TestSequentialTests(t *testing.T) {
 func TestAdvertiserPanel(t *testing.T) {
 	// Initialize a new Gin router
 	r := gin.Default()
+	r.SetFuncMap(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"until": func(count int) []int {
+			var i int
+			var items []int
+			for i = 0; i < count; i++ {
+				items = append(items, i)
+			}
+			return items
+		},
+	})
 	r.LoadHTMLGlob("../templates/*")
 	r.GET("/advertiser/:username/panel", AdvertiserPanel)
 
@@ -73,6 +87,19 @@ func TestAdvertiserPanel(t *testing.T) {
 // TestAddFunds tests the AddFunds handler
 func testAddFunds(t *testing.T) {
 	r := gin.Default()
+	r.SetFuncMap(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"until": func(count int) []int {
+			var i int
+			var items []int
+			for i = 0; i < count; i++ {
+				items = append(items, i)
+			}
+			return items
+		},
+	})
 	r.POST("/advertiser/:username/add-funds", AddFunds)
 
 	// Create a test advertiser
@@ -108,6 +135,19 @@ func testAddFunds(t *testing.T) {
 // TestCreateAd tests the CreateAd handler
 func testCreateAd(t *testing.T) {
 	r := gin.Default()
+	r.SetFuncMap(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"until": func(count int) []int {
+			var i int
+			var items []int
+			for i = 0; i < count; i++ {
+				items = append(items, i)
+			}
+			return items
+		},
+	})
 	r.POST("/advertiser/:username/create-ad", CreateAd)
 
 	// Create a test advertiser
@@ -158,6 +198,19 @@ func testCreateAd(t *testing.T) {
 // TestToggleAd tests the ToggleAd handler
 func TestToggleAd(t *testing.T) {
 	r := gin.Default()
+	r.SetFuncMap(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"until": func(count int) []int {
+			var i int
+			var items []int
+			for i = 0; i < count; i++ {
+				items = append(items, i)
+			}
+			return items
+		},
+	})
 	r.POST("/advertiser/:username/toggle-ad", ToggleAd)
 
 	// Create a test advertiser and ad
@@ -203,6 +256,19 @@ func TestToggleAd(t *testing.T) {
 // TestAdReport tests the AdReport handler
 func TestAdReport(t *testing.T) {
 	r := gin.Default()
+	r.SetFuncMap(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"until": func(count int) []int {
+			var i int
+			var items []int
+			for i = 0; i < count; i++ {
+				items = append(items, i)
+			}
+			return items
+		},
+	})
 	r.LoadHTMLGlob("../templates/*")
 	r.GET("/advertiser/ad-report/:id", AdReport)
 
@@ -245,6 +311,19 @@ func TestAdReport(t *testing.T) {
 // TestHandleEditAd tests the HandleEditAd handler
 func testHandleEditAd(t *testing.T) {
 	r := gin.Default()
+	r.SetFuncMap(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"until": func(count int) []int {
+			var i int
+			var items []int
+			for i = 0; i < count; i++ {
+				items = append(items, i)
+			}
+			return items
+		},
+	})
 	r.POST("/advertiser/:username/edit-ad", HandleEditAd)
 
 	// Create a test advertiser and ad

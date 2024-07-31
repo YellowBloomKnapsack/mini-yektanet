@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html/template"
 	"log"
 	"os"
 	"strconv"
@@ -37,6 +38,19 @@ func main() {
 		AllowAllOrigins: true,
 	}))
 	r.Use(ginprom.PromMiddleware(nil))
+	r.SetFuncMap(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"until": func(count int) []int {
+			var i int
+			var items []int
+			for i = 0; i < count; i++ {
+				items = append(items, i)
+			}
+			return items
+		},
+	})
 
 	r.GET("/metrics", ginprom.PromHandler(promhttp.Handler()))
 	r.LoadHTMLGlob("templates/*")
