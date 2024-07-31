@@ -24,7 +24,7 @@ type MockLogicService struct {
 	Err    error
 }
 
-func (m *MockLogicService) GetBestAd() (*dto.AdDTO, error) {
+func (m *MockLogicService) GetBestAd(publisherId uint) (*dto.AdDTO, error) {
 	return m.BestAd, m.Err
 }
 
@@ -108,7 +108,7 @@ type MockLogicService_Brake struct {
 	BrakeAdDuration time.Duration
 }
 
-func (m *MockLogicService_Brake) GetBestAd() (*dto.AdDTO, error) {
+func (m *MockLogicService_Brake) GetBestAd(publisherId uint) (*dto.AdDTO, error) {
 	return nil, nil
 }
 

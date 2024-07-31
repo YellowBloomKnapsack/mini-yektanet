@@ -14,6 +14,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Mock KVStorage
+type MockKVStorage struct {
+	kv map[string]string
+}
+
+func (s *MockKVStorage) Get(key string) (string, error) {
+	return s.kv[key], nil
+}
+
+func (s *MockKVStorage) Set(key, value string) error {
+	s.kv[key] = value
+	return nil
+}
+
 // Mock CacheService
 type MockCacheService struct {
 	mark map[string]interface{}
@@ -45,7 +59,8 @@ func TestBestScoreOn(t *testing.T) {
 	setupEnv()
 
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 
 	ads := []*dto.AdDTO{
 		{ID: 1, Score: 5},
@@ -66,7 +81,8 @@ func TestRandomOn(t *testing.T) {
 	setupEnv()
 
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 
 	ads := []*dto.AdDTO{
 		{ID: 1},
@@ -87,25 +103,27 @@ func TestValidsOn(t *testing.T) {
 	setupEnv()
 
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 	ls.brakedAdsCache.Add("2")
 	ls.brakedAdsCache.Add("5")
 	ls.brakedAdsCache.Add("6")
 
+	kv.Set("1", "kw2")
+
 	ads := []*dto.AdDTO{
-		{ID: 1},
-		{ID: 2},
-		{ID: 3},
-		{ID: 4},
-		{ID: 5},
-		{ID: 6},
+		{ID: 1, Keywords: []string{"kw1", "kw2"}},
+		{ID: 2, Keywords: []string{}},
+		{ID: 3, Keywords: []string{"kw2", "kw3"}},
+		{ID: 4, Keywords: []string{"kw4", "kw5"}},
+		{ID: 5, Keywords: []string{}},
+		{ID: 6, Keywords: []string{}},
 	}
 
-	validAds := ls.validsOn(ads)
-	assert.Equal(t, 3, len(validAds))
+	validAds := ls.validsOn(ads, uint(1))
+	assert.Equal(t, 2, len(validAds))
 	assert.Equal(t, uint(1), validAds[0].ID)
 	assert.Equal(t, uint(3), validAds[1].ID)
-	assert.Equal(t, uint(4), validAds[2].ID)
 }
 
 func TestUpdateAdsList(t *testing.T) {
@@ -123,7 +141,8 @@ func TestUpdateAdsList(t *testing.T) {
 	defer ts.Close()
 
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 	ls.getAdsAPIPath = ts.URL
 
 	err := ls.updateAdsList()
@@ -136,7 +155,8 @@ func TestStartTicker(t *testing.T) {
 	setupEnv()
 
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 	ls.interval = 1
 
 	ads := []dto.AdDTO{
@@ -168,8 +188,8 @@ func TestBrakeAd(t *testing.T) {
 	duration := 200 * time.Millisecond
 
 	cache := &MockCacheService{make(map[string]interface{})}
-	service := NewLogicService(cache)
-	ls, _ := service.(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 
 	ls.BrakeAd(adId)
 
@@ -191,9 +211,10 @@ func TestBrakeAd(t *testing.T) {
 
 func TestGetBestAd_NoAdsAvailable(t *testing.T) {
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 
-	_, err := ls.GetBestAd()
+	_, err := ls.GetBestAd(uint(1))
 	assert.Error(t, err)
 	assert.Equal(t, "no ad was found", err.Error())
 }
@@ -202,26 +223,28 @@ func TestGetBestAd_OnlyUnvisitedAdsAvailable(t *testing.T) {
 	os.Setenv("UNVISITED_CHANCE", "100")
 
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 	ls.unvisitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 		{ID: 2, Score: 10},
 	}
 
-	bestAd, err := ls.GetBestAd()
+	bestAd, err := ls.GetBestAd(uint(1))
 	assert.NoError(t, err)
 	assert.Contains(t, []uint{1, 2}, bestAd.ID)
 }
 
 func TestGetBestAd_OnlyVisitedAdsAvailable(t *testing.T) {
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 	ls.visitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 		{ID: 2, Score: 10},
 	}
 
-	bestAd, err := ls.GetBestAd()
+	bestAd, err := ls.GetBestAd(uint(1))
 	assert.NoError(t, err)
 	assert.Equal(t, uint(2), bestAd.ID)
 }
@@ -230,7 +253,8 @@ func TestGetBestAd_BothAdsAvailable_UnvisitedChance100(t *testing.T) {
 	os.Setenv("UNVISITED_CHANCE", "100")
 
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 	ls.visitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 	}
@@ -238,7 +262,7 @@ func TestGetBestAd_BothAdsAvailable_UnvisitedChance100(t *testing.T) {
 		{ID: 2, Score: 10},
 	}
 
-	bestAd, err := ls.GetBestAd()
+	bestAd, err := ls.GetBestAd(uint(1))
 	assert.NoError(t, err)
 	assert.Equal(t, uint(2), bestAd.ID)
 }
@@ -247,7 +271,8 @@ func TestGetBestAd_BothAdsAvailable_UnvisitedChance0(t *testing.T) {
 	os.Setenv("UNVISITED_CHANCE", "0")
 
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 	ls.visitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 	}
@@ -255,7 +280,7 @@ func TestGetBestAd_BothAdsAvailable_UnvisitedChance0(t *testing.T) {
 		{ID: 2, Score: 10},
 	}
 
-	bestAd, err := ls.GetBestAd()
+	bestAd, err := ls.GetBestAd(uint(1))
 	assert.NoError(t, err)
 	assert.Equal(t, uint(1), bestAd.ID)
 }
@@ -264,7 +289,8 @@ func TestGetBestAd_ValidUnvisitedAdsAvailable(t *testing.T) {
 	os.Setenv("UNVISITED_CHANCE", "100")
 
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 	ls.unvisitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 		{ID: 2, Score: 10},
@@ -273,14 +299,15 @@ func TestGetBestAd_ValidUnvisitedAdsAvailable(t *testing.T) {
 	// Braking one of the ads to make it invalid
 	ls.BrakeAd(1)
 
-	bestAd, err := ls.GetBestAd()
+	bestAd, err := ls.GetBestAd(uint(1))
 	assert.NoError(t, err)
 	assert.Equal(t, uint(2), bestAd.ID)
 }
 
 func TestGetBestAd_ValidVisitedAdsAvailable(t *testing.T) {
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 	ls.visitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 		{ID: 2, Score: 10},
@@ -289,7 +316,7 @@ func TestGetBestAd_ValidVisitedAdsAvailable(t *testing.T) {
 	// Braking one of the ads to make it invalid
 	ls.BrakeAd(2)
 
-	bestAd, err := ls.GetBestAd()
+	bestAd, err := ls.GetBestAd(uint(1))
 	assert.NoError(t, err)
 	assert.Equal(t, uint(1), bestAd.ID)
 }
@@ -298,7 +325,8 @@ func TestGetBestAd_ValidUnvisitedAndVisitedAdsAvailable(t *testing.T) {
 	os.Setenv("UNVISITED_CHANCE", "50")
 
 	cache := &MockCacheService{make(map[string]interface{})}
-	ls := NewLogicService(cache).(*LogicService)
+	kv := &MockKVStorage{make(map[string]string)}
+	ls := NewLogicService(cache, kv).(*LogicService)
 	ls.visitedAds = []*dto.AdDTO{
 		{ID: 1, Score: 5},
 	}
@@ -309,7 +337,33 @@ func TestGetBestAd_ValidUnvisitedAndVisitedAdsAvailable(t *testing.T) {
 	// Braking the unvisited ad to make it invalid
 	ls.BrakeAd(2)
 
-	bestAd, err := ls.GetBestAd()
+	bestAd, err := ls.GetBestAd(uint(1))
 	assert.NoError(t, err)
 	assert.Equal(t, uint(1), bestAd.ID)
+}
+
+func TestHasIntersection(t *testing.T) {
+	ls := &LogicService{}
+
+	tests := []struct {
+		lhs      []string
+		rhs      []string
+		expected bool
+	}{
+		{[]string{"apple", "banana", "cherry"}, []string{"grape", "banana", "kiwi"}, true},
+		{[]string{"apple", "banana", "cherry"}, []string{"grape", "kiwi"}, false},
+		{[]string{"apple", "banana", "cherry"}, []string{"apple", "kiwi"}, true},
+		{[]string{}, []string{"grape", "kiwi"}, false},
+		{[]string{"apple", "banana"}, []string{}, false},
+		{[]string{}, []string{}, false},
+		{[]string{"apple", "banana", "banana"}, []string{"banana"}, true},
+		{[]string{"apple", "banana", "cherry"}, []string{"cherry", "banana"}, true},
+	}
+
+	for _, test := range tests {
+		result := ls.hasIntersection(test.lhs, test.rhs)
+		if result != test.expected {
+			t.Errorf("hasIntersection(%v, %v) = %v; expected %v", test.lhs, test.rhs, result, test.expected)
+		}
+	}
 }
