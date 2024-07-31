@@ -60,6 +60,18 @@
             {{ end }}
             </tbody>
         </table>
+
+        <div class="pagination">
+            {{ if gt .TotalPages 1 }}
+            <ul>
+                {{ range $i := until .TotalPages }}
+                <li class="{{ if eq (add $i 2) $.CurrentPage }}active{{ end }}">
+                    <a href="?page={{ add $i 1 }}">{{ add $i 1 }}</a>
+                </li>
+                {{ end }}
+            </ul>
+            {{ end }}
+        </div>
     </div>
 
     <div class="ad-list">
