@@ -2,12 +2,14 @@ package cache
 
 import (
 	"context"
-	"os"
-	"log"
-	"time"
 	"fmt"
+	"log"
+	"os"
+	"time"
 
 	"YellowBloomKnapsack/mini-yektanet/common/cache"
+	"YellowBloomKnapsack/mini-yektanet/eventserver/grafana"
+
 	"github.com/redis/go-redis/v9"
 )
 
@@ -38,8 +40,16 @@ func (r *EventServerCache) IsPresent(token string) bool {
 	// exists, err := r.redisClient.BFExists(ctx, tableName(), token).Result()
 	if err != nil {
 		log.Println(err)
+		grafana.CacheOperationsTotal.WithLabelValues("check", "error").Inc()
 		return true
 	}
+
+	if exists {
+        grafana.CacheOperationsTotal.WithLabelValues("check", "hit").Inc()
+    } else {
+        grafana.CacheOperationsTotal.WithLabelValues("check", "miss").Inc()
+    }
+
 
 	return exists
 }
@@ -50,8 +60,12 @@ func (r *EventServerCache) Add(token string) {
 	// add to bloom filter
 	_, err := r.redisClient.Do(ctx, "BF.ADD", r.tableName, token).Bool()
 	if err != nil {
-		log.Println(err)
-	}
+        log.Println(err)
+        grafana.CacheOperationsTotal.WithLabelValues("add", "error").Inc()
+    } else {
+        grafana.CacheOperationsTotal.WithLabelValues("add", "success").Inc()
+    }
+
 }
 
 func (r* EventServerCache) bfResetService() {
