@@ -19,16 +19,17 @@ import (
 )
 
 const (
-	INTBASE  = 10
-	INTBIT32 = 32
-	INTBIT64 = 64
+	INTBASE      = 10
+	INTBIT32     = 32
+	INTBIT64     = 64
+	itemsPerPage = 4
 )
 
 func AdvertiserPanel(c *gin.Context) {
 	advertiserUserName := c.Param("username")
 
 	var advertiser models.Advertiser
-	result := database.DB.Preload("Ads").Preload("Transactions").Where("username = ?", advertiserUserName).First(&advertiser)
+	result := database.DB.Preload("Ads").Where("username = ?", advertiserUserName).First(&advertiser)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			fmt.Printf("No advertiser found with username %s, creating a new one.\n", advertiserUserName)
@@ -50,11 +51,30 @@ func AdvertiserPanel(c *gin.Context) {
 		}
 	}
 
+	// Pagination logic
+	pageStr := c.DefaultQuery("page", "1")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	var totalTransactions int64
+	database.DB.Model(&models.Transaction{}).Where("customer_id = ? AND customer_type = ?", advertiser.ID, models.Customer_Advertiser).Count(&totalTransactions)
+	totalPages := int((totalTransactions + itemsPerPage - 1) / itemsPerPage)
+
+	var transactions []models.Transaction
+	database.DB.Model(&models.Transaction{}).Where("customer_id = ? AND customer_type = ?", advertiser.ID, models.Customer_Advertiser).
+		Offset((page - 1) * itemsPerPage).
+		Limit(itemsPerPage).
+		Find(&transactions)
+
 	c.HTML(http.StatusOK, "advertiser_panel.html", gin.H{
 		"Balance":      advertiser.Balance,
 		"Ads":          advertiser.Ads,
 		"Username":     advertiserUserName,
-		"Transactions": advertiser.Transactions,
+		"Transactions": transactions,
+		"TotalPages":   totalPages,
+		"CurrentPage":  page + 1,
 	})
 
 	grafana.TotalAdvertiserBalance.Set(float64(advertiser.Balance))
