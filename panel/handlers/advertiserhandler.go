@@ -12,7 +12,6 @@ import (
 	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"YellowBloomKnapsack/mini-yektanet/panel/database"
 	"YellowBloomKnapsack/mini-yektanet/panel/grafana"
-	// "github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 
 	"github.com/gin-gonic/gin"
@@ -77,8 +76,6 @@ func AdvertiserPanel(c *gin.Context) {
 		"TotalPages":   totalPages,
 		"CurrentPage":  page + 1,
 	})
-
-	grafana.TotalAdvertiserBalance.Set(float64(advertiser.Balance))
 }
 
 func AddFunds(c *gin.Context) {
@@ -146,6 +143,7 @@ func AddFunds(c *gin.Context) {
 
 	c.Redirect(http.StatusSeeOther, fmt.Sprintf("/advertiser/%s/panel", advertiserUserName))
 
+	grafana.TotalAdvertiserBalance.Add(float64(transaction.Amount))
 	grafana.TransactionCount.WithLabelValues("add_funds_success").Inc()
 }
 
@@ -307,6 +305,7 @@ func HandleEditAd(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid bid amount"})
 		return
 	}
+	oldBid := ad.Bid
 	ad.Bid = bid
 
 	// Handle image upload if a new image is provided
@@ -340,6 +339,7 @@ func HandleEditAd(c *gin.Context) {
 		return
 	}
 
+	grafana.TotalAdvertiserBalance.Add(float64(ad.Bid-oldBid))
 	c.Redirect(http.StatusSeeOther, "/advertiser/"+username+"/panel")
 }
 
