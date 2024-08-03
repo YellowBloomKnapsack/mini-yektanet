@@ -64,7 +64,6 @@ func main() {
 		advertiser.POST("/:username/toggle-ad", handlers.ToggleAd)
 		advertiser.GET("/:username/ad-report/:id", handlers.AdReport)
 		advertiser.POST("/:username/edit-ad", handlers.HandleEditAd)
-
 	}
 
 	publisher := r.Group("/publisher")

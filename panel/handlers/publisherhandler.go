@@ -39,10 +39,6 @@ func PublisherPanel(c *gin.Context) {
 	script := fmt.Sprintf("<script> %s </script>",
 		generateScript(publisher.ID))
 
-	// script := fmt.Sprintf("<script src='%s:%s/js/script.js'></script>",
-	// 	os.Getenv("HOSTNAME"),
-	// 	os.Getenv("PUBLISHER_WEBSITE_PORT"))
-
 	yektanetPortionString := os.Getenv("YEKTANET_PORTION")
 
 	// Convert the value to an integer
@@ -123,8 +119,8 @@ func WithdrawPublisherBalance(c *gin.Context) {
 	})
 
 	// update grafana metrics
-	grafana.TotalPublisherBalance.Set(float64(publisher.Balance))
-	grafana.TransactionCount.WithLabelValues("withdraw_success_failure").Inc()
+	grafana.TotalPublisherBalance.Add(-float64(transaction.Amount))
+	grafana.TransactionCount.WithLabelValues("withdraw_balance_success").Inc()
 }
 
 func prepareChartData(interactions []models.AdsInteraction, yektanetPortion int) map[string]interface{} {
