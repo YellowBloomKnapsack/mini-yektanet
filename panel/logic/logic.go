@@ -29,6 +29,7 @@ func GetSumOfBids(db *gorm.DB, adID uint) (int64, error) {
 	err := db.Model(&models.AdsInteraction{}).
 		Where("ad_id = ? AND type = ? AND event_time BETWEEN ? AND ?", adID, eventType, endTime, startTime).
 		Select("SUM(bid)").
+		Debug().
 		Scan(&sum).Error
 
 	// return 0 if no row was found
