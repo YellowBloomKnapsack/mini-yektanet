@@ -16,6 +16,27 @@ switch (publisherName) {
     case "filimo": publisherId = 5; break;
 }
 
+function clickHandler(data) {
+    // form containing token
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = data['click_link']
+    form.target = '_blank'
+    form.style.display = 'none'
+
+    // add token to form
+    tokenField = document.createElement('input')
+    tokenField.type = 'hidden'
+    tokenField.name = 'token'
+    tokenField.value = data['click_token']
+    form.appendChild(tokenField)
+
+    // submit the form to server
+    document.body.appendChild(form)
+    form.submit()
+    document.body.removeChild(form)
+}
+
 fetch(AdServerAPILink+"/"+publisherId)
 .then((res) => {
     if (!res.ok) {
@@ -23,8 +44,7 @@ fetch(AdServerAPILink+"/"+publisherId)
     }
     return res.json()
 }).then((data) => {
-
-    console.log(data)
+    // console.log(data)
 
     // ad image
     const img = document.createElement("img")
@@ -59,9 +79,9 @@ fetch(AdServerAPILink+"/"+publisherId)
     }
 
     const impressionHandler = (entries, observer) => {
-        console.log(entries)
+        // console.log(entries)
         entries.forEach((entry) => {
-            console.log(entry)
+            // console.log(entry)
             if(entry.isIntersecting && !viewed) {
                 viewed = true
                 fetch(data["impression_link"], {
@@ -78,16 +98,3 @@ fetch(AdServerAPILink+"/"+publisherId)
     let observer = new IntersectionObserver(impressionHandler, options)
     observer.observe(adDiv)
 })
-
-function clickHandler(data) {
-    fetch(data["click_link"], {
-        method: "POST",
-        body: JSON.stringify({
-            token: data["click_token"]
-        })
-    })
-    .then(res=>{
-        console.log(res)
-        window.open(res.url)
-    })
-}

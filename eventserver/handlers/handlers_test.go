@@ -3,9 +3,11 @@ package handlers
 import (
 	"YellowBloomKnapsack/mini-yektanet/common/models"
 	"bytes"
+	"strings"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -128,9 +130,12 @@ func TestPostClick(t *testing.T) {
 	r := gin.Default()
 	r.POST("/click", handler.PostClick)
 
-	req := httptest.NewRequest(http.MethodPost, "/click", nil)
-	req.Header.Set("Content-Type", "application/json")
-	req.Body = ioutil.NopCloser(bytes.NewReader([]byte(`{"token":"dummy-token"}`)))
+	data := url.Values{}
+	data.Set("token", "dummy-token")
+	req := httptest.NewRequest(http.MethodPost, "/click", strings.NewReader(data.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// req.Header.Set("Content-Type", "application/json")
+	// req.Body = ioutil.NopCloser(bytes.NewReader([]byte(`{"token":"dummy-token"}`)))
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)

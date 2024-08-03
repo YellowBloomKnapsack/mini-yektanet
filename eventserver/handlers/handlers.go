@@ -49,13 +49,8 @@ func (h *EventServerHandler) PostClick(c *gin.Context) {
 		return
 	}
 
-	var req TokenRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	token := req.Token
+	c.Request.ParseForm()
+	token := c.Request.PostForm["token"][0]
 	data, err := h.tokenHandler.VerifyToken(token, key)
 	if err != nil {
 		grafana.TokenValidationTotal.WithLabelValues("invalid").Inc()
@@ -84,7 +79,6 @@ func (h *EventServerHandler) PostImpression(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
 	token := req.Token
 	data, err := h.tokenHandler.VerifyToken(token, key)
 	if err != nil {
